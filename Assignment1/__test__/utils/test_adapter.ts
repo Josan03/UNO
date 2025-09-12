@@ -1,9 +1,9 @@
 import { createFullDeck, createFromMemento, Card, Deck } from '../../src/model/deck'
+import { createUnoGame, Game } from '../../src/model/uno'
 import { Randomizer, Shuffler, standardRandomizer, standardShuffler } from '../../src/utils/random_utils'
 
 // Fix (or import) these types:
 type Round = any
-type Game = any
 
 export function createInitialDeck(): Deck {
   return createFullDeck()
@@ -40,6 +40,7 @@ export type GameConfig = {
 }
 
 export function createGame(props: Partial<GameConfig>): Game {
+  return createUnoGame(props.players, props.targetScore)
 }
 
 export function createGameFromMemento(memento: any, randomizer: Randomizer = standardRandomizer, shuffler: Shuffler<Card> = standardShuffler): Game {
