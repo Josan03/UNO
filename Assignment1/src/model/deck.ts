@@ -1,6 +1,8 @@
 import { Shuffler } from "../utils/random_utils";
 import { Card, Color, Type } from "./card";
 
+export type { Card, Color, Type } from "./card";
+
 export const colors: Readonly<Color[]> = [
   "RED",
   "YELLOW",
