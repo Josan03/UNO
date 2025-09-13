@@ -1,5 +1,6 @@
+import { canPlayOn, hasColor } from "../utils/helpers";
 import { Shuffler } from "../utils/random_utils";
-import { Card, Color } from "./card";
+import { Card, Color, Numbered, Wild } from "./card";
 import { ArrayDeck, buildStandardDeck, createFullDeck, Deck } from "./deck";
 
 export type Round = {
@@ -59,6 +60,7 @@ export class RoundClass implements Round {
       shuffler(fullUnoDeckCards); // shuffles the array in place
     }
     this._drawPile = new ArrayDeck(fullUnoDeckCards);
+
     // Create Players
     this.playersArray = [];
     if (players.length > 10 || players.length < 2) {
@@ -77,7 +79,6 @@ export class RoundClass implements Round {
       });
     }
     this.playerCount = this.playersArray.length;
-
     this.currentPlayerIndex =
       dealer < this.playersArray.length - 1 ? dealer + 1 : 0;
 
@@ -95,8 +96,29 @@ export class RoundClass implements Round {
   }
 
   play(playerIndex: number, color?: Color) {
-    //
+    if (playerIndex != this.currentPlayerIndex) {
+      throw new Error("Illegal move: not this player's turn");
+    }
+
+    //const playerCard = this.playersArray[playerIndex].cards.pop(); // I should check if its legal at the begining and after that to pop
+    //if (playerCard) this._discardPile.addTop(playerCard);
+    const playerCard =
+      this.playersArray[playerIndex].cards[
+        this.playersArray[playerIndex].cards.length - 1
+      ];
+
+    if (playerCard) {
+      if (this.isAllowedToPlayCard(playerCard, color)) {
+        const playerCard = this.playersArray[playerIndex].cards.pop();
+        if (playerCard) this._discardPile.addTop(playerCard);
+      } else {
+        throw new Error("Iligal to play cards");
+      }
+    } else {
+      throw new Error("Player dont have cards to play");
+    }
   }
+
   canPlay(playerIndex: number) {
     return true;
   }
@@ -189,5 +211,10 @@ export class RoundClass implements Round {
         this.playersArray[this.currentPlayerIndex].cards.push(newCads[1]);
       }
     }
+  }
+
+  private isAllowedToPlayCard(card: Card, color?: Color): boolean {
+    const top = this._discardPile.peek();
+    return canPlayOn(card, top, color);
   }
 }
