@@ -27,6 +27,7 @@ export type Deck = {
   toMemento(): Record<string, string | number>[];
   top(): Card | undefined; //get the top Card
   draw(count: number): Card[] | undefined;
+  peek(): Card | undefined;
 };
 
 export class ArrayDeck implements Deck {
@@ -41,6 +42,10 @@ export class ArrayDeck implements Deck {
 
   top() {
     return this.cards.pop();
+  }
+
+  peek() {
+    return this.cards[this.cards.length - 1];
   }
 
   draw(count: number) {

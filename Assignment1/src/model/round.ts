@@ -1,5 +1,5 @@
 import { Shuffler } from "../utils/random_utils";
-import { Card } from "./card";
+import { Card, Color } from "./card";
 import { ArrayDeck, buildStandardDeck, createFullDeck, Deck } from "./deck";
 
 export type Round = {
@@ -10,7 +10,9 @@ export type Round = {
   playerInTurn(): number;
   catchUnoFailure(data: UnoFailureProps): boolean;
   playerHand(playerIndex: number): Card[];
-  play(playerIndex: number): void;
+  play(playerIndex: number, color?: Color): void;
+  canPlay(playerIndex: number): boolean;
+  canPlayAny(): boolean;
   drawPile(): Deck;
   discardPile(): Deck;
   sayUno(playerIndex: number): void;
@@ -92,6 +94,16 @@ export class RoundClass implements Round {
     if (firstCard) this.actionBasedOnFirstCard(firstCard);
   }
 
+  play(playerIndex: number, color?: Color) {
+    //
+  }
+  canPlay(playerIndex: number) {
+    return true;
+  }
+  canPlayAny(): boolean {
+    return true;
+  }
+
   player(playerIndex: number) {
     if (playerIndex < 0 || playerIndex >= this.playerCount)
       throw new Error("Player index out of bounds");
@@ -104,10 +116,6 @@ export class RoundClass implements Round {
 
   discardPile(): Deck {
     return this._discardPile;
-  }
-
-  play(player: number) {
-    // currentPlayerIndex++ dupa ce a jucat
   }
 
   catchUnoFailure(data: UnoFailureProps): boolean {
