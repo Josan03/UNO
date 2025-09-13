@@ -25,6 +25,8 @@ export type Deck = {
   shuffle(shuffler: Shuffler<Card>): void;
   fromMemento(cards: Record<string, string | number>[]): Deck;
   toMemento(): Record<string, string | number>[];
+  top(): Card | undefined; //get the top Card
+  draw(count: number): Card[] | undefined;
 };
 
 export class ArrayDeck implements Deck {
@@ -35,6 +37,21 @@ export class ArrayDeck implements Deck {
 
   get size(): number {
     return this.cards.length;
+  }
+
+  top() {
+    return this.cards.pop();
+  }
+
+  draw(count: number) {
+    const arraycards: Card[] = [];
+    for (let i = 0; i < count; i++) {
+      const card = this.cards.shift();
+      if (card) {
+        arraycards.push(card);
+      }
+    }
+    return arraycards;
   }
 
   filter(pred: (card: Card) => boolean): Deck {
