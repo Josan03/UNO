@@ -11,7 +11,7 @@ export type Round = {
   playerInTurn(): number;
   catchUnoFailure(data: UnoFailureProps): boolean;
   playerHand(playerIndex: number): Card[];
-  play(playerIndex: number, color?: Color): void;
+  play(playerIndex: number, color?: Color): Card;
   canPlay(playerIndex: number): boolean;
   canPlayAny(): boolean;
   drawPile(): Deck;
@@ -37,11 +37,12 @@ export class RoundClass implements Round {
   public dealer: number;
   public shuffler?: Shuffler<Card>;
   public cardsPerPlayer: number;
+  public playerCount: number;
+  public currentPlayerIndex: number;
+  private direction: 1 | -1 = 1; // +1 clockwise, -1 counter-clockwise
   private playersArray: Array<RoundPlayerDetails>;
   private _drawPile: Deck;
   private _discardPile: Deck;
-  public playerCount: number;
-  public currentPlayerIndex: number;
 
   constructor(
     players: string[],
@@ -95,33 +96,34 @@ export class RoundClass implements Round {
     if (firstCard) this.actionBasedOnFirstCard(firstCard);
   }
 
-  play(playerIndex: number, color?: Color) {
-    if (playerIndex != this.currentPlayerIndex) {
-      throw new Error("Illegal move: not this player's turn");
-    }
+  play(cardIndex: number, color?: Color): Card {
+    const hand = this.playersArray[this.currentPlayerIndex].cards;
 
-    //const playerCard = this.playersArray[playerIndex].cards.pop(); // I should check if its legal at the begining and after that to pop
-    //if (playerCard) this._discardPile.addTop(playerCard);
-    const playerCard =
-      this.playersArray[playerIndex].cards[
-        this.playersArray[playerIndex].cards.length - 1
-      ];
-
-    if (playerCard) {
-      if (this.isAllowedToPlayCard(playerCard, color)) {
-        const playerCard = this.playersArray[playerIndex].cards.pop();
-        if (playerCard) this._discardPile.addTop(playerCard);
-      } else {
-        throw new Error("Iligal to play cards");
+    if (hand.length > 0) {
+      if (cardIndex < 0 || cardIndex >= hand.length) {
+        throw new Error("Illegal move: card index out of bounds");
       }
-    } else {
-      throw new Error("Player dont have cards to play");
+
+      const card = hand[cardIndex];
+      if (!this.isAllowedToPlayCard(card, color)) {
+        throw new Error("Illegal move: cannot play this card");
+      }
+
+      hand.splice(cardIndex, 1);
+      this._discardPile.addTop(card);
+
+      this.applyCardEffectsInPlay(card);
+
+      return card;
     }
+    else
+      throw new Error("Illegal move: hand is empty");
   }
 
   canPlay(playerIndex: number) {
     return true;
   }
+
   canPlayAny(): boolean {
     return true;
   }
@@ -141,13 +143,10 @@ export class RoundClass implements Round {
   }
 
   catchUnoFailure(data: UnoFailureProps): boolean {
-    // Nu o spus UNO
     if (!this.playersArray[data.accused].saidUno) {
       return false;
     }
-    // O spus UNO
     else {
-      // Are o carte?
       if (this.playersArray[data.accused].cards.length === 1) return false;
       else {
         for (let i = 0; i < 4; i++) {
@@ -181,35 +180,69 @@ export class RoundClass implements Round {
     return this.currentPlayerIndex;
   }
 
-  private nextPlayer(): void {
-    const countIndex = this.playersArray.length - 1;
-    if (this.currentPlayerIndex === countIndex) this.currentPlayerIndex = 0;
-    else this.currentPlayerIndex++;
+  private applyCardEffectsInPlay(card: Card): void {
+    switch (card.type) {
+      case "REVERSE":
+        this.direction = this.direction === 1 ? -1 : 1;
+        this.nextPlayer(1);
+        break;
+      case "SKIP":
+        this.nextPlayer(2);
+        break;
+      case "DRAW": {
+        const next = this.peekNextIndex(1);
+        const drawn = this._drawPile.draw(2) ?? [];
+        for (const c of drawn) this.playersArray[next].cards.push(c);
+        this.nextPlayer(2);
+        break;
+      }
+      case "WILD":
+        this.nextPlayer(1);
+        break;
+      case "WILD DRAW": {
+        const next = this.peekNextIndex(1);
+        const drawn = this._drawPile.draw(4) ?? [];
+        for (const c of drawn) this.playersArray[next].cards.push(c);
+        this.nextPlayer(2);
+        break;
+      }
+      case "NUMBERED":
+      default:
+        this.nextPlayer(1);
+        break;
+    }
+  }
+
+  private peekNextIndex(steps: number = 1): number {
+    const n = this.playersArray.length;
+    const delta = this.direction * steps;
+    return ((this.currentPlayerIndex + delta) % n + n) % n;
+  }
+
+  private nextPlayer(steps: number = 1): void {
+    const n = this.playersArray.length;
+    const delta = this.direction * steps;
+    this.currentPlayerIndex = ((this.currentPlayerIndex + delta) % n + n) % n;
   }
 
   private actionBasedOnFirstCard(firstCard: Card): void {
-    if (firstCard?.type == "REVERSE") {
-      this.currentPlayerIndex =
-        this.dealer > 0 ? this.dealer - 1 : this.playersArray.length - 1;
-    }
-
-    if (firstCard.type == "SKIP") {
-      if (this.dealer < this.playersArray.length - 2) {
-        this.currentPlayerIndex = this.dealer + 2;
-      } else if (this.dealer == this.playersArray.length - 2) {
-        this.currentPlayerIndex = 0;
-      } else if (this.dealer == this.playersArray.length - 1) {
-        this.currentPlayerIndex = 1;
+    switch (firstCard.type) {
+      case "REVERSE":
+        this.direction = this.direction === 1 ? -1 : 1;
+        this.nextPlayer(1);
+        break;
+      case "SKIP":
+        this.nextPlayer(2);
+        break;
+      case "DRAW": {
+        const drawn = this._drawPile.draw(2) ?? [];
+        for (const c of drawn) this.playersArray[this.currentPlayerIndex].cards.push(c);
+        this.nextPlayer(1);
+        break;
       }
-    }
-
-    if (firstCard.type == "DRAW") {
-      const newCads: Card[] | undefined = this._drawPile.draw(2);
-
-      if (newCads) {
-        this.playersArray[this.currentPlayerIndex].cards.push(newCads[0]);
-        this.playersArray[this.currentPlayerIndex].cards.push(newCads[1]);
-      }
+      default:
+        // no extra effect
+        break;
     }
   }
 

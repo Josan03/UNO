@@ -46,7 +46,7 @@ export class ArrayDeck implements Deck {
   }
 
   addTop(card: Card): void {
-    this.cards.push();
+    this.cards.push(card);
   }
 
   peek() {

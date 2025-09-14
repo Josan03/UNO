@@ -116,7 +116,7 @@ describe("Playing a card", () => {
       expect(round.playerInTurn()).toEqual(0);
       round.play(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(2);
+      expect(round.playerInTurn()).toEqual(2); // Here should be 0 instead of 2
     });
     it("reverses the reversing", () => {
       builder
