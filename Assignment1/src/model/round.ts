@@ -96,7 +96,7 @@ export class RoundClass implements Round {
     if (firstCard) this.actionBasedOnFirstCard(firstCard);
   }
 
-  play(cardIndex: number, color?: Color): Card {
+  play(cardIndex: number, namedColor?: Color): Card {
     const hand = this.playersArray[this.currentPlayerIndex].cards;
 
     if (hand.length > 0) {
@@ -105,8 +105,14 @@ export class RoundClass implements Round {
       }
 
       const card = hand[cardIndex];
-      if (!this.isAllowedToPlayCard(card, color)) {
-        throw new Error("Illegal move: cannot play this card");
+      if (namedColor) {
+        if (!this.isAllowedToPlayCard(card, namedColor))
+          throw new Error(
+            "Illegal move: cannot play this card and name a color"
+          );
+      } else {
+        if (!this.isAllowedToPlayCard(card))
+          throw new Error("Illegal move: cannot play this card");
       }
 
       hand.splice(cardIndex, 1);
@@ -115,9 +121,7 @@ export class RoundClass implements Round {
       this.applyCardEffectsInPlay(card);
 
       return card;
-    }
-    else
-      throw new Error("Illegal move: hand is empty");
+    } else throw new Error("Illegal move: hand is empty");
   }
 
   canPlay(playerIndex: number) {
@@ -125,7 +129,8 @@ export class RoundClass implements Round {
   }
 
   canPlayAny(): boolean {
-    return true;
+    const hand = this.playersArray[this.currentPlayerIndex].cards;
+    return hand.some((card) => this.isAllowedToPlayCard(card));
   }
 
   player(playerIndex: number) {
@@ -145,8 +150,7 @@ export class RoundClass implements Round {
   catchUnoFailure(data: UnoFailureProps): boolean {
     if (!this.playersArray[data.accused].saidUno) {
       return false;
-    }
-    else {
+    } else {
       if (this.playersArray[data.accused].cards.length === 1) return false;
       else {
         for (let i = 0; i < 4; i++) {
@@ -160,6 +164,7 @@ export class RoundClass implements Round {
   }
 
   playerHand(player: number) {
+    console.log(this.playersArray[player].cards);
     return this.playersArray[player].cards;
   }
 
@@ -174,6 +179,7 @@ export class RoundClass implements Round {
       this.playersArray[this.currentPlayerIndex].cards.push(newCard);
       this.nextPlayer();
     }
+    ``;
   }
 
   playerInTurn(): number {
@@ -216,13 +222,13 @@ export class RoundClass implements Round {
   private peekNextIndex(steps: number = 1): number {
     const n = this.playersArray.length;
     const delta = this.direction * steps;
-    return ((this.currentPlayerIndex + delta) % n + n) % n;
+    return (((this.currentPlayerIndex + delta) % n) + n) % n;
   }
 
   private nextPlayer(steps: number = 1): void {
     const n = this.playersArray.length;
     const delta = this.direction * steps;
-    this.currentPlayerIndex = ((this.currentPlayerIndex + delta) % n + n) % n;
+    this.currentPlayerIndex = (((this.currentPlayerIndex + delta) % n) + n) % n;
   }
 
   private actionBasedOnFirstCard(firstCard: Card): void {
@@ -236,7 +242,8 @@ export class RoundClass implements Round {
         break;
       case "DRAW": {
         const drawn = this._drawPile.draw(2) ?? [];
-        for (const c of drawn) this.playersArray[this.currentPlayerIndex].cards.push(c);
+        for (const c of drawn)
+          this.playersArray[this.currentPlayerIndex].cards.push(c);
         this.nextPlayer(1);
         break;
       }

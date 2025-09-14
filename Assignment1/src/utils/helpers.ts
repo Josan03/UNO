@@ -20,19 +20,16 @@ export function hasColor(c: Card): c is Numbered | ColoredAction {
 export function canPlayOn(
   card: Card,
   top: Card | undefined,
-  currentColor?: Color
+  namedColor?: Color
 ): boolean {
   if (!top) return true;
 
-  // Wilds can always be played
-  if (isWild(card)) return true;
+  if (namedColor) {
+    return isWild(card);
+  }
 
-  // If a previous WILD set a current color, honor it first
-  if (currentColor && hasColor(card)) {
-    if (card.color === currentColor) return true;
-  } else if (hasColor(card) && hasColor(top)) {
-    // Otherwise match physical color on top card
-    if (card.color === top.color) return true;
+  if (hasColor(card) && hasColor(top) && card.color === top.color) {
+    return true;
   }
 
   // Number match (NUMBERED vs NUMBERED)

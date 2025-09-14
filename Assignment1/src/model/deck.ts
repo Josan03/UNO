@@ -42,15 +42,15 @@ export class ArrayDeck implements Deck {
   }
 
   top() {
-    return this.cards.pop();
+    return this.cards.shift();
   }
 
   addTop(card: Card): void {
-    this.cards.push(card);
+    this.cards.unshift(card);
   }
 
   peek() {
-    return this.cards[this.cards.length - 1];
+    return this.cards[0];
   }
 
   draw(count: number) {
