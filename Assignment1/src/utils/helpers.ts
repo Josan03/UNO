@@ -20,24 +20,24 @@ export function hasColor(c: Card): c is Numbered | ColoredAction {
 export function canPlayOn(
   card: Card,
   top: Card | undefined,
-  namedColor?: Color
+  activeColor?: Color
 ): boolean {
   if (!top) return true;
 
-  if (namedColor) {
-    return isWild(card);
+  if (isWild(card)) return true;
+
+  if (activeColor && hasColor(card)) {
+    if (card.color === activeColor) return true;
   }
 
   if (hasColor(card) && hasColor(top) && card.color === top.color) {
     return true;
   }
 
-  // Number match (NUMBERED vs NUMBERED)
   if (isNumbered(card) && isNumbered(top) && card.number === top.number) {
     return true;
   }
 
-  // Action type match (e.g., SKIP on SKIP)
   if (isColoredAction(card) && isColoredAction(top) && card.type === top.type) {
     return true;
   }

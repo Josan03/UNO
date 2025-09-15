@@ -4,6 +4,7 @@ import {
   Card,
   Deck,
 } from "../../src/model/deck";
+import { createRoundClassFromMemento } from "../../src/model/round";
 import { RoundClass } from "../../src/model/round";
 import { createUnoGame, Game } from "../../src/model/uno";
 import {
@@ -45,7 +46,9 @@ export function createRound({
 export function createRoundFromMemento(
   memento: any,
   shuffler: Shuffler<Card> = standardShuffler
-): Round {}
+): Round {
+  return createRoundClassFromMemento(memento, shuffler);
+}
 
 export type GameConfig = {
   players: string[];
@@ -63,4 +66,4 @@ export function createGameFromMemento(
   memento: any,
   randomizer: Randomizer = standardRandomizer,
   shuffler: Shuffler<Card> = standardShuffler
-): Game {}
+): Game { }
