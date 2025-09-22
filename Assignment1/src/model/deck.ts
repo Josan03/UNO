@@ -25,10 +25,10 @@ export type Deck = {
   shuffle(shuffler: Shuffler<Card>): void;
   fromMemento(cards: Record<string, string | number>[]): Deck;
   toMemento(): Record<string, string | number>[];
-  top(): Card | undefined; //get the top Card
+  top(): Card | undefined;
   draw(count: number): Card[] | undefined;
-  peek(): Card | undefined; // To see the last card but not to pop()
-  addTop(card: Card): void; // This is used for discard files to add the card on top
+  peek(): Card | undefined;
+  addTop(card: Card): void;
 };
 
 export class ArrayDeck implements Deck {
@@ -41,15 +41,15 @@ export class ArrayDeck implements Deck {
     return this.cards.length;
   }
 
-  top() {
-    return this.cards.shift();
+  top(): Card | undefined {
+    return this.cards[0];
   }
 
   addTop(card: Card): void {
     this.cards.unshift(card);
   }
 
-  peek() {
+  peek(): Card | undefined {
     return this.cards[0];
   }
 

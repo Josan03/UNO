@@ -4,9 +4,9 @@ import {
   Card,
   Deck,
 } from "../../src/model/deck";
-import { createRoundClassFromMemento } from "../../src/model/round";
+import { createRoundClassFromMemento, Round } from "../../src/model/round";
 import { RoundClass } from "../../src/model/round";
-import { createUnoGame, Game } from "../../src/model/uno";
+import { createUnoGame } from "../../src/model/uno";
 import {
   Randomizer,
   Shuffler,
@@ -14,8 +14,7 @@ import {
   standardShuffler,
 } from "../../src/utils/random_utils";
 
-// Fix (or import) these types:
-type Round = any;
+type Game = any
 
 export function createInitialDeck(): Deck {
   return createFullDeck();
