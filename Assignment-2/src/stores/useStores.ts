@@ -10,9 +10,9 @@ export const useGameStore = defineStore('game', () => {
 })
 
 export const useCurrentScreen = defineStore('screen', () => {
-  type CurrentScreenProp = 'Setup' | 'Game' | 'GameOver'
+  type CurrentScreenProp = 'Start' | 'Setup' | 'Game' | 'GameOver'
 
-  const currentScreen = ref<CurrentScreenProp>('Setup')
+  const currentScreen = ref<CurrentScreenProp>('Start')
 
   return { currentScreen }
 })

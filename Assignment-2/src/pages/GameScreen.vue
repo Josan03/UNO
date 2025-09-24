@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCurrentScreen, useGameStore } from '@/stores/useStores'
-import UnoCard from './UnoCard.vue'
+import UnoCard from '@/components/UnoCard.vue'
 import type { Card } from '@/model/card'
 
 const game = useGameStore()
