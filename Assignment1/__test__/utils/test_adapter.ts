@@ -4,9 +4,9 @@ import {
   Card,
   Deck,
 } from "../../src/model/deck";
-import { createRoundClassFromMemento } from "../../src/model/round";
+import { createRoundClassFromMemento, Round } from "../../src/model/round";
 import { RoundClass } from "../../src/model/round";
-import { createUnoGame, Game } from "../../src/model/uno";
+import { createUnoGame, createUnoGameFromMemento } from "../../src/model/uno";
 import {
   Randomizer,
   Shuffler,
@@ -14,8 +14,7 @@ import {
   standardShuffler,
 } from "../../src/utils/random_utils";
 
-// Fix (or import) these types:
-type Round = any;
+type Game = any
 
 export function createInitialDeck(): Deck {
   return createFullDeck();
@@ -59,11 +58,21 @@ export type GameConfig = {
 };
 
 export function createGame(props: Partial<GameConfig>): Game {
-  return createUnoGame(props.players, props.targetScore);
+  return createUnoGame(
+    props.players,
+    props.targetScore,
+    {
+      randomizer: props.randomizer ?? standardRandomizer,
+      shuffler: props.shuffler ?? standardShuffler,
+      cardsPerPlayer: props.cardsPerPlayer ?? 7,
+    }
+  );
 }
 
 export function createGameFromMemento(
   memento: any,
   randomizer: Randomizer = standardRandomizer,
   shuffler: Shuffler<Card> = standardShuffler
-): Game { }
+): Game {
+  return createUnoGameFromMemento(memento, { randomizer, shuffler })
+}
