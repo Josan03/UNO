@@ -2,13 +2,24 @@
 import type { Card } from '@/model/card'
 
 defineProps<{
-  card: Card
+  card?: Card
+  back?: boolean
 }>()
 </script>
 
 <template>
-  <div v-if="card"></div>
+  <!-- back of card -->
   <div
+    v-if="back"
+    class="relative w-24 h-36 rounded-xl border-[6px] border-white shadow-lg overflow-hidden flex items-center justify-center bg-black select-none"
+  >
+    <!-- UNO logo (text or SVG) -->
+    <span class="text-white text-3xl font-bold italic tracking-wider">UNO</span>
+  </div>
+
+  <!-- front of card -->
+  <div
+    v-else-if="card"
     class="relative w-24 h-36 rounded-xl border-[6px] border-white shadow-lg overflow-hidden flex items-center justify-center text-white font-bold select-none"
     :class="{
       'bg-red-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'RED',
@@ -69,7 +80,7 @@ defineProps<{
 
       <!-- action / wild cards -->
       <span
-        class="relative z-10 text-6xl"
+        class="relative z-10 text-5xl"
         :class="{
           'text-red-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'RED',
           'text-green-600':
