@@ -6,14 +6,30 @@ import { computed, ref, watchEffect } from 'vue'
 import CustomButton from '@/components/CustomButton.vue'
 import { standardShuffler } from '@/utils/random_utils'
 import PlayerHand from '@/components/PlayerHand.vue'
-import { watch } from 'vue'
-import type { Color } from '@/model/card'
 import BotHand from '@/components/BotHand.vue'
+import BotWorker from '@/workers/bot-worker.ts?worker'
+import type { BotWorkerMessage, BotWorkerResponse } from '@/workers/bot-worker'
+import { serializeForBot } from '@/utils/serialize'
 
 const game = useGameStore()
 const screen = useCurrentScreen()
-
 const activePlayerIndex = computed(() => round.value.playerInTurn())
+
+const bot = new BotWorker()
+bot.onmessage = (event: MessageEvent<BotWorkerResponse>) => {
+  const { move } = event.data
+
+  if (move.type === 'play') {
+    round.value.play(move.cardIndex, move.color) // move.color will be undefined for normal cards
+  } else {
+    round.value.draw()
+  }
+
+  const next = round.value.playerInTurn()
+  if (next !== undefined && next > 0) {
+    setTimeout(() => botPlay(next), 1000)
+  }
+}
 
 // Build player names: first is real player, rest are bots
 const players = computed(() => {
@@ -30,14 +46,6 @@ const round = ref<RoundClass>(new RoundClass(players.value, 0, standardShuffler,
 
 function getNewCard() {
   round.value.draw()
-}
-
-function playCard(player: number, cardIndex: number) {
-  try {
-    round.value.play(cardIndex) // plays from player’s hand
-  } catch (err) {
-    console.error('Illegal move:', err)
-  }
 }
 
 const activeColorClass = computed(() => {
@@ -63,45 +71,19 @@ watchEffect(() => {
 })
 
 function botPlay(botIndex: number) {
-  // 🔒 Safety: only play if it’s really this bot’s turn
   if (round.value.playerInTurn() !== botIndex) return
 
-  const hand = round.value.playerHand(botIndex)
+  const snapshot = serializeForBot({
+    currentColor: round.value.currentColor,
+    botHand: round.value.playerHand(botIndex),
+    topCard: round.value._discardPile.top(),
+  })
+  console.log('Snapshot', snapshot)
 
-  // Try to find a playable card
-  let played = false
-  for (let i = 0; i < hand.length; i++) {
-    if (round.value.canPlay(i)) {
-      const card = hand[i]
-      if (card.type === 'WILD' || card.type === 'WILD DRAW') {
-        const colors: Color[] = ['RED', 'GREEN', 'BLUE', 'YELLOW']
-        const chosen = colors[Math.floor(Math.random() * colors.length)]
-        round.value.play(i, chosen)
-      } else {
-        round.value.play(i)
-      }
-      played = true
-      break
-    }
-  }
-
-  // If no playable card → draw
-  if (!played) {
-    round.value.draw()
-  }
-
-  // 🔑 Who’s next?
-  const next = round.value.playerInTurn()
-
-  if (next !== undefined && next > 0) {
-    if (next === botIndex) {
-      // Same bot again (2 players, or skip/draw case)
-      setTimeout(() => botPlay(botIndex), 1000)
-    } else {
-      // Another bot → queue their turn
-      setTimeout(() => botPlay(next), 1000)
-    }
-  }
+  bot.postMessage({
+    botIndex,
+    roundState: snapshot,
+  } as BotWorkerMessage)
 }
 
 round.value.onEnd(({ winner }) => {
