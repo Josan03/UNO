@@ -1,0 +1,47 @@
+enum Color {
+    RED
+    YELLOW
+    GREEN
+    BLUE
+}
+
+enum CardType {
+    NUMBERED
+    SKIP
+    REVERSE
+    DRAW
+    WILD
+    WILD_DRAW
+}
+
+enum GameStatus {
+    WAITING_FOR_PLAYERS
+    IN_PROGRESS
+    COMPLETED
+    ABORTED
+}
+
+type Card {
+    type: CardType!
+    color: Color!
+    number: Int
+}
+
+type Game {
+    id: ID!
+    players: [String!]!
+    currentPlayerIndex: Int!
+    deck: [Card]
+    status: GameStatus!
+}
+
+type Subscription {
+    gameUpdates(gameId: ID!) : Game!
+}
+
+type Mutation {
+    createGame(players: [String!]): Game!
+    joinGame(gameId: ID!, player: String!): Game!
+    playCard(gameId: ID!, playerIndex: Int!, cardIndex: Int!, color: Color): Card!
+    drawCard(gameId: ID!, playerIndex: Int!): Card!
+}
