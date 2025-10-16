@@ -43,6 +43,7 @@ type Query {
 type Mutation {
     create_game(creator: String!, numberOfPlayers: Int!): Game!
     join_game(id: ID!, player: String!): Game!
+    register(id: ID!, player: String!): ActiveGame!
 }
 
 type Subscription {
