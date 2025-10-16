@@ -129,7 +129,7 @@ class UnoGame implements Game {
 export function createUnoGame(
     players?: string[],
     targetScore?: number,
-    opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card>; cardsPerPlayer?: number }
+    opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card>; cardsPerPlayer?: number, startRound?: boolean, roundFromMemento?: any }
 ): Game {
     const p = players ?? ["A", "B"];
     const t = targetScore ?? 500;

@@ -1,0 +1,51 @@
+enum Color { RED YELLOW GREEN BLUE }
+enum Direction { CLOCKWISE COUNTERCLOCKWISE }
+
+type Round {
+    id: ID!
+    players: [String!]!
+    hands: [[Card!]!]!
+    drawPile: [Card!]!
+    discardPile: [Card!]!
+    currentColor: Color!
+    currentDirection: Direction!
+    dealerIndex: Int!
+    playerInTurn: Int!
+}
+
+type PendingGame {
+    id: ID!
+    pending: Boolean
+    creator: String!
+    players: [String!]!
+    numberOfPlayers: Int!
+}
+
+type ActiveGame {
+    id: ID!
+    pending: Boolean
+    cardsPerPlayer: Int!
+    players: [String!]!
+    targetScore: Int!
+    scores: [Int!]!
+    currentRound: Round
+}
+
+union Game = ActiveGame | PendingGame
+
+type Query {
+    games: [ActiveGame!]!
+    game(id: ID!): ActiveGame
+    pending_games: [PendingGame!]!
+    pending_game(id: ID!): PendingGame
+}
+
+type Mutation {
+    create_game(creator: String!, numberOfPlayers: Int!): Game!
+    join_game(id: ID!, player: String!): Game!
+}
+
+type Subscription {
+    active: ActiveGame
+    pending: PendingGame
+}
