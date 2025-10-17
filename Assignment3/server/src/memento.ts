@@ -9,9 +9,9 @@ export function from_memento(m: IndexedMemento, randomizer: Randomizer): Indexed
     const game = UnoGame.createUnoGameFromMemento(m, { randomizer })
 
     return {
-        ...game,
         id: m.id,
         pending: false,
+        ...game,
     }
 }
 
@@ -19,8 +19,8 @@ export function to_memento(y: IndexedGame): IndexedMemento {
     const gameMemento = y.toMemento()
 
     return {
-        ...gameMemento,
         id: y.id,
         pending: y.pending,
+        ...gameMemento,
     }
 }

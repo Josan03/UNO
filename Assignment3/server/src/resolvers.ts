@@ -13,7 +13,7 @@ type GraphQlGame = {
     playerCount: number
     scores: number[]
     cardsPerPlayer: number | undefined
-    currentRound: Round
+    currentRound?: Round
 }
 
 export function toGraphQLGame(game: IndexedGame): GraphQlGame {
@@ -43,8 +43,8 @@ async function games(api: API): Promise<GraphQlGame[]> {
 }
 
 async function game(api: API, id: string): Promise<GraphQlGame | undefined> {
+    console.log("Resolver id:", id)
     const res = await api.game(id)
-    console.log(res)
     return res.resolve({
         onSuccess: async g => toGraphQLGame(g),
         onError: async e => undefined

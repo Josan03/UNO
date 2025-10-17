@@ -10,7 +10,7 @@ import { WebSocketServer } from "ws";
 
 import { GameStore, IndexedGame, PendingGame } from "./servermodel";
 import { from_memento, IndexedMemento } from "./memento";
-import { standardRandomizer } from "../../domain/src/utils/random_utils";
+import { standardRandomizer, standardShuffler } from "../../domain/src/utils/random_utils";
 import { create_api } from "./api";
 import { useServer } from "graphql-ws/use/ws";
 import cors from "cors";
@@ -19,10 +19,9 @@ import { PubSub } from "graphql-subscriptions";
 import { create_resolvers, toGraphQLGame } from "./resolvers";
 import { MongoStore } from "./mongostore";
 import { MemoryStore } from "./memorystore";
-import { createUnoGame, GameMemento, UnoGame } from "../../domain/src/model/uno";
-import { Round } from "../../domain/src/model/round";
+import { createUnoGameFromMemento } from "../../domain/src/model/uno";
 
-const currentRoundMemento: any = {
+const currentRoundMemento = {
   players: ['Cristian', 'Emanuel'],
   hands: [
     [
@@ -44,10 +43,28 @@ const currentRoundMemento: any = {
   playerInTurn: 0,
 }
 
-const game0 = createUnoGame(["Cristian", "Emanuel"], 500, { cardsPerPlayer: 7 })
-const game1 = createUnoGame(["Cristian", "Emanuel"], 500, { cardsPerPlayer: 7 })
+const unoMemento = {
+  players: ["Cristian", "Emanuel"],
+  currentRound: currentRoundMemento,
+  targetScore: 500,
+  scores: [430, 220],
+  cardsPerPlayer: 7
+}
 
-const games = [game0, game1]
+const finishedUnoMemento = {
+  players: ["Cristian", "Emanuel"],
+  targetScore: 500,
+  scores: [220, 530],
+  cardsPerPlayer: 7
+}
+
+const games: IndexedMemento[] = [
+  {
+    id: "0",
+    pending: false,
+    ...createUnoGameFromMemento(finishedUnoMemento, { randomizer: standardRandomizer, shuffler: standardShuffler }),
+  },
+]
 
 async function startServer(store: GameStore) {
   const pubsub: PubSub = new PubSub();
@@ -63,7 +80,8 @@ async function startServer(store: GameStore) {
   try {
     const content = await fs.readFile("./game.sdl", "utf8");
     const typeDefs = `#graphql
-            ${content}`;
+      ${content}
+    `;
     const resolvers = create_resolvers(pubsub, api);
 
     const app = express();

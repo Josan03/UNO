@@ -29,6 +29,7 @@ export const create_api = (broadcaster: Broadcaster, store: GameStore, randomize
     }
 
     async function game(id: string) {
+        // Problem here with ID
         return server.game(id)
     }
 
