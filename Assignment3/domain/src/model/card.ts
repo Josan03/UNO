@@ -22,10 +22,3 @@ export type ColoredAction =
 export type Wild = { readonly type: "WILD" } | { readonly type: "WILD DRAW" };
 
 export type Card = Numbered | ColoredAction | Wild;
-
-export const colors: readonly Color[] = [
-  "RED",
-  "YELLOW",
-  "GREEN",
-  "BLUE",
-] as const;

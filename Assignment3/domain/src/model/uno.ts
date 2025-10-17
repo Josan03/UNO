@@ -6,6 +6,8 @@ export type Game = {
     readonly players: string[];
     readonly targetScore: number;
     readonly playerCount: number;
+    scores: number[];
+    cardsPerPlayer?: number;
     player(index: number): string;
     score(index: number): number;
     winner(): number | undefined;
@@ -14,21 +16,21 @@ export type Game = {
 };
 
 export type GameMemento = {
-    cardsPerPlayer: number;
     players: string[];
     targetScore: number;
     scores: number[];
-    currentRound?: any;
+    cardsPerPlayer?: number;
+    currentRound?: any
 };
 
-class UnoGame implements Game {
+export class UnoGame implements Game {
     public players: string[];
     public targetScore: number;
-    private scores: number[];
-    private _currentRound?: RoundClass;
+    public readonly cardsPerPlayer: number;
+    public scores: number[];
+    private _currentRound: Round | undefined;
     private readonly randomizer: Randomizer;
     private readonly shuffler: Shuffler<Card>;
-    private readonly cardsPerPlayer: number;
 
     constructor(
         players: string[],
@@ -56,7 +58,7 @@ class UnoGame implements Game {
         this.cardsPerPlayer = opts?.cardsPerPlayer ?? 7;
 
         if (opts?.roundFromMemento) {
-            this._currentRound = createRoundClassFromMemento(opts.roundFromMemento, this.shuffler) as RoundClass;
+            this._currentRound = createRoundClassFromMemento(opts.roundFromMemento, this.shuffler)
             this._currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this._currentRound!));
         } else if (opts?.startRound !== false) {
             const dealer = Math.floor(this.randomizer(this.players.length));
@@ -99,19 +101,21 @@ class UnoGame implements Game {
     }
 
     toMemento(): GameMemento {
-        const base: any = {
-            cardsPerPlayer: this.cardsPerPlayer,
+        const base: GameMemento = {
             players: this.players.slice(),
             targetScore: this.targetScore,
-            scores: this.scores.slice(),
+            scores: this.scores,
+            cardsPerPlayer: this.cardsPerPlayer ?? 7
         };
+
         if (this._currentRound) {
             base.currentRound = this._currentRound.toMemento();
         }
+
         return base as GameMemento;
     }
 
-    private onRoundEnd(winnerIndex: number, round: RoundClass) {
+    private onRoundEnd(winnerIndex: number, round: Round) {
         const gained = round.score() ?? 0;
         this.scores[winnerIndex] += gained;
 
@@ -143,14 +147,16 @@ export function createUnoGameFromMemento(
     if (!Array.isArray(m.players) || m.players.length < 2) {
         throw new Error("Invalid memento: at least 2 players are required.");
     }
+
     if (!Number.isFinite(m.targetScore) || m.targetScore <= 0) {
         throw new Error("Invalid memento: target score must be greater than 0.");
     }
+
     if (!Array.isArray(m.scores) || m.scores.length !== m.players.length) {
         throw new Error("Invalid memento: scores length must equal players length.");
     }
-    // Non-negative scores
-    if (m.scores.some(s => !Number.isFinite(s) || s < 0)) {
+
+    if (m.scores.some(score => !Number.isFinite(score) || score < 0)) {
         throw new Error("Invalid memento: scores must be non-negative numbers.");
     }
 
