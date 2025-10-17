@@ -8,6 +8,7 @@ export type Game = {
     readonly playerCount: number;
     scores: number[];
     cardsPerPlayer?: number;
+    _currentRound?: Round | undefined;
     player(index: number): string;
     score(index: number): number;
     winner(): number | undefined;
@@ -26,9 +27,10 @@ export type GameMemento = {
 export class UnoGame implements Game {
     public players: string[];
     public targetScore: number;
+    public playersCount: number;
     public readonly cardsPerPlayer: number;
     public scores: number[];
-    private _currentRound: Round | undefined;
+    public _currentRound: Round | undefined;
     private readonly randomizer: Randomizer;
     private readonly shuffler: Shuffler<Card>;
 
@@ -52,6 +54,7 @@ export class UnoGame implements Game {
 
         this.players = players.slice();
         this.targetScore = targetScore;
+        this.playersCount = this.players.length
         this.scores = Array(this.players.length).fill(0);
         this.randomizer = opts?.randomizer ?? standardRandomizer;
         this.shuffler = opts?.shuffler ?? standardShuffler;

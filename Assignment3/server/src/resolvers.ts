@@ -8,10 +8,11 @@ import { PubSub } from "graphql-subscriptions"
 type GraphQlGame = {
     id: string
     pending: boolean
-    cardsPerPlayer: number
     players: readonly string[]
     targetScore: number
+    playerCount: number
     scores: number[]
+    cardsPerPlayer: number | undefined
     currentRound: Round
 }
 
@@ -22,8 +23,9 @@ export function toGraphQLGame(game: IndexedGame): GraphQlGame {
         pending: false,
         players: memento.players,
         targetScore: memento.targetScore,
-        cardsPerPlayer: memento.cardsPerPlayer,
+        playerCount: memento.players.length,
         scores: memento.scores,
+        cardsPerPlayer: memento.cardsPerPlayer,
         currentRound: memento.currentRound
     }
 }
@@ -42,6 +44,7 @@ async function games(api: API): Promise<GraphQlGame[]> {
 
 async function game(api: API, id: string): Promise<GraphQlGame | undefined> {
     const res = await api.game(id)
+    console.log(res)
     return res.resolve({
         onSuccess: async g => toGraphQLGame(g),
         onError: async e => undefined
@@ -107,10 +110,10 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
             }
         },
         Mutation: {
-            async new_game(_: any, params: { creator: string, numberOfPlayers: number }) {
+            async create_game(_: any, params: { creator: string, numberOfPlayers: number }) {
                 return new_game(api, params)
             },
-            async join(_: any, params: { id: string, player: string }) {
+            async join_game(_: any, params: { id: string, player: string }) {
                 return join(api, params)
             },
         },

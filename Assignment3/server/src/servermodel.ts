@@ -8,7 +8,7 @@ export interface IndexedGame extends Game.Game {
 }
 
 export type PendingGame = {
-  id: string;
+  readonly id: string;
   readonly pending: true;
   creator?: string;
   players: string[];

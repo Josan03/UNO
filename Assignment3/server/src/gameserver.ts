@@ -19,15 +19,35 @@ import { PubSub } from "graphql-subscriptions";
 import { create_resolvers, toGraphQLGame } from "./resolvers";
 import { MongoStore } from "./mongostore";
 import { MemoryStore } from "./memorystore";
+import { createUnoGame, GameMemento, UnoGame } from "../../domain/src/model/uno";
+import { Round } from "../../domain/src/model/round";
 
-const game0: IndexedMemento = {
-  id: "0",
-  pending: false,
-  cardsPerPlayer: 7,
-  players: ["Cristian", "Emanuel"],
-  targetScore: 500,
-  scores: [10, 55],
-};
+const currentRoundMemento: any = {
+  players: ['Cristian', 'Emanuel'],
+  hands: [
+    [
+      { type: 'WILD' },
+      { type: 'DRAW', color: 'GREEN' },
+    ],
+    [{ type: 'NUMBERED', color: 'RED', number: 7 }],
+  ],
+  drawPile: [
+    { type: 'WILD DRAW' }
+  ],
+  discardPile: [
+    { type: 'NUMBERED', color: 'BLUE', number: 7 },
+    { type: 'SKIP', color: 'BLUE' },
+  ],
+  currentColor: 'BLUE',
+  currentDirection: "CLOCKWISE",
+  dealer: 1,
+  playerInTurn: 0,
+}
+
+const game0 = createUnoGame(["Cristian", "Emanuel"], 500, { cardsPerPlayer: 7 })
+const game1 = createUnoGame(["Cristian", "Emanuel"], 500, { cardsPerPlayer: 7 })
+
+const games = [game0, game1]
 
 async function startServer(store: GameStore) {
   const pubsub: PubSub = new PubSub();
@@ -98,7 +118,10 @@ function configAndStart() {
     const dbNameIndex = process.argv.indexOf("--dbname");
     const dbName = dbNameIndex !== -1 ? process.argv[dbNameIndex + 1] : "test";
     startServer(MongoStore(connectionString, dbName, standardRandomizer));
-  } else startServer(new MemoryStore(from_memento(game0, standardRandomizer)));
+  } else {
+    const indexedGames = games.map(gameMemento => from_memento(gameMemento, standardRandomizer));
+    startServer(new MemoryStore(...indexedGames));
+  }
 }
 
 configAndStart();

@@ -1,5 +1,23 @@
 enum Color { RED YELLOW GREEN BLUE }
 enum Direction { CLOCKWISE COUNTERCLOCKWISE }
+enum Type { NUMBERED SKIP REVERSE DRAW WILD WILD_DRAW }
+
+type Numbered {
+    type: Type!
+    color: Color!
+    number: Int!
+}
+
+type ColoredAction {
+    type: Type!
+    color: Color!
+}
+
+type Wild {
+    type: Type!
+}
+
+union Card = Numbered | ColoredAction | Wild
 
 type Round {
     id: ID!

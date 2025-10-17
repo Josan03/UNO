@@ -6,17 +6,21 @@ import * as UnoGame from "../../domain/src/model/uno"
 export type IndexedMemento = GameMemento & { readonly id: string, readonly pending: false }
 
 export function from_memento(m: IndexedMemento, randomizer: Randomizer): IndexedGame {
+    const game = UnoGame.createUnoGameFromMemento(m, { randomizer })
+
     return {
-        ...UnoGame.createUnoGameFromMemento(m, { randomizer: randomizer }),
+        ...game,
         id: m.id,
-        pending: false
+        pending: false,
     }
 }
 
 export function to_memento(y: IndexedGame): IndexedMemento {
+    const gameMemento = y.toMemento()
+
     return {
-        ...y.toMemento(),
+        ...gameMemento,
         id: y.id,
-        pending: y.pending
+        pending: y.pending,
     }
 }
