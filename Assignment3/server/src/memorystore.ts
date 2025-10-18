@@ -6,7 +6,7 @@ const not_found = (key: any): StoreError => ({ type: 'Not Found', key })
 export class MemoryStore implements GameStore {
     private _games: ActiveGame[]
     private _pending_games: PendingGame[]
-    private next_id: number = 0
+    private next_id: number = 4
 
     constructor(games: ActiveGame[], pending_games: PendingGame[]) {
         this._games = games

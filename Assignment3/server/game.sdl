@@ -52,6 +52,7 @@ type PendingGame {
     pending: Boolean
     creator: String!
     numberOfPlayers: Int!
+    players: [String!]!
 }
 
 type ActiveGame {
