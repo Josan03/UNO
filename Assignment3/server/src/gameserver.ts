@@ -64,7 +64,15 @@ const pendingGames = [
         id: '2',
         pending: true,
         creator: "Cristian",
-        numberOfPlayers: 4
+        numberOfPlayers: 4,
+        players: ["Cristian"]
+    },
+    {
+        id: '3',
+        pending: true,
+        creator: "Cristian",
+        numberOfPlayers: 4,
+        players: []
     },
 ]
 

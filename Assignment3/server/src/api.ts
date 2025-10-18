@@ -1,15 +1,15 @@
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
 import {
-  GameStore,
-  ActiveGame,
-  PendingGame,
-  ServerError,
-  ServerModel,
+    GameStore,
+    ActiveGame,
+    PendingGame,
+    ServerError,
+    ServerModel,
 } from "./servermodel";
 
 export interface Broadcaster {
-  send: (message: ActiveGame | PendingGame) => Promise<void>;
+    send: (message: ActiveGame | PendingGame) => Promise<void>;
 }
 
 export type API = {
@@ -22,43 +22,43 @@ export type API = {
 }
 
 export const create_api = (
-  broadcaster: Broadcaster,
-  store: GameStore,
-  randomizer: Randomizer
+    broadcaster: Broadcaster,
+    store: GameStore,
+    randomizer: Randomizer
 ): API => {
-  const server = new ServerModel(store, randomizer);
+    const server = new ServerModel(store, randomizer);
 
     async function create_game(creator: string, numberOfPlayers: number) {
         const newGame = await server.add(creator, numberOfPlayers)
-        newGame.process(broadcast)
+        // newGame.process(broadcast)
         return newGame
     }
 
-  async function games() {
-    return server.all_games();
-  }
+    async function games() {
+        return server.all_games();
+    }
 
-  async function game(id: string) {
-    return server.game(id);
-  }
+    async function game(id: string) {
+        return server.game(id);
+    }
 
-  function pending_games() {
-    return server.all_pending_games();
-  }
+    function pending_games() {
+        return server.all_pending_games();
+    }
 
-  function pending_game(id: string) {
-    return server.pending_game(id);
-  }
+    function pending_game(id: string) {
+        return server.pending_game(id);
+    }
 
-  async function join(id: string, player: string) {
-    const game = await server.join(id, player);
-    game.process(broadcast);
-    return game;
-  }
+    async function join(id: string, player: string) {
+        const game = await server.join(id, player);
+        game.process(broadcast);
+        return game;
+    }
 
-  async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
-    broadcaster.send(game);
-  }
+    async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
+        broadcaster.send(game);
+    }
 
     return {
         create_game,

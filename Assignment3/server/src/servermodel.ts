@@ -1,4 +1,4 @@
-import { Uno, UnoSpecs } from "../../domain/src/model/uno";
+import { createUnoGame, Uno, UnoSpecs } from "../../domain/src/model/uno";
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
 
@@ -24,10 +24,13 @@ export interface GameStore {
     games(): Promise<ServerResponse<ActiveGame[], StoreError>>
     game(id: string): Promise<ServerResponse<ActiveGame, StoreError>>
     add(game: ActiveGame): Promise<ServerResponse<ActiveGame, StoreError>>
+    update(game: ActiveGame): Promise<ServerResponse<ActiveGame, StoreError>>
 
     pending_games(): Promise<ServerResponse<PendingGame[], StoreError>>
     pending_game(id: string): Promise<ServerResponse<PendingGame, StoreError>>;
     add_pending(game: Omit<PendingGame, 'id'>): Promise<ServerResponse<PendingGame, StoreError>>
+    delete_pending(id: string): Promise<ServerResponse<null, StoreError>>
+    update_pending(pending: PendingGame): Promise<ServerResponse<PendingGame, StoreError>>
 }
 
 export class ServerModel {
@@ -62,7 +65,25 @@ export class ServerModel {
 
     async join(id: string, player: string) {
         const pending_game = await this.store.pending_game(id)
-        pending_game.process(async game => game.players.push(player))
+        // pending_game.process(async game => game.players.push(player))
         return pending_game.flatMap(g => this.startGameIfReady(g))
+    }
+
+    private startGameIfReady(pending_game: PendingGame): Promise<ServerResponse<ActiveGame | PendingGame, StoreError>> {
+        const id = pending_game.id
+        if (pending_game.players.length === pending_game.numberOfPlayers) {
+            const game = createUnoGame(pending_game.players, 500)
+            this.store.delete_pending(id)
+            return this.store.add({ id, pending: false, ...game })
+        } else {
+            return this.store.update_pending(pending_game)
+        }
+    }
+
+    private async update(id: string, player: string, processor: (game: ActiveGame) => Promise<unknown>): Promise<ServerResponse<ActiveGame, ServerError>> {
+        let uno: ServerResponse<ActiveGame, ServerError> = await this.game(id)
+        uno = await uno.filter(async game => game && game.currentRound.player(game.currentRound.currentPlayerIndex) === player, async _ => Forbidden)
+        // uno.process(processor)
+        return uno.flatMap(async game => this.store.update(game))
     }
 }
