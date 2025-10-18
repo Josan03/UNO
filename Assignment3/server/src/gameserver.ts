@@ -10,7 +10,10 @@ import { WebSocketServer } from "ws";
 
 import { GameStore, IndexedGame, PendingGame } from "./servermodel";
 import { from_memento, IndexedMemento } from "./memento";
-import { standardRandomizer, standardShuffler } from "../../domain/src/utils/random_utils";
+import {
+  standardRandomizer,
+  standardShuffler,
+} from "../../domain/src/utils/random_utils";
 import { create_api } from "./api";
 import { useServer } from "graphql-ws/use/ws";
 import cors from "cors";
@@ -22,49 +25,47 @@ import { MemoryStore } from "./memorystore";
 import { createUnoGameFromMemento } from "../../domain/src/model/uno";
 
 const currentRoundMemento = {
-  players: ['Cristian', 'Emanuel'],
+  players: ["Cristian", "Emanuel"],
   hands: [
-    [
-      { type: 'WILD' },
-      { type: 'DRAW', color: 'GREEN' },
-    ],
-    [{ type: 'NUMBERED', color: 'RED', number: 7 }],
+    [{ type: "WILD" }, { type: "DRAW", color: "GREEN" }],
+    [{ type: "NUMBERED", color: "RED", number: 7 }],
   ],
-  drawPile: [
-    { type: 'WILD DRAW' }
-  ],
+  drawPile: [{ type: "WILD DRAW" }],
   discardPile: [
-    { type: 'NUMBERED', color: 'BLUE', number: 7 },
-    { type: 'SKIP', color: 'BLUE' },
+    { type: "NUMBERED", color: "BLUE", number: 7 },
+    { type: "SKIP", color: "BLUE" },
   ],
-  currentColor: 'BLUE',
+  currentColor: "BLUE",
   currentDirection: "CLOCKWISE",
   dealer: 1,
   playerInTurn: 0,
-}
+};
 
 const unoMemento = {
   players: ["Cristian", "Emanuel"],
   currentRound: currentRoundMemento,
   targetScore: 500,
   scores: [430, 220],
-  cardsPerPlayer: 7
-}
+  cardsPerPlayer: 7,
+};
 
 const finishedUnoMemento = {
   players: ["Cristian", "Emanuel"],
   targetScore: 500,
   scores: [220, 530],
-  cardsPerPlayer: 7
-}
+  cardsPerPlayer: 7,
+};
 
 const games: IndexedMemento[] = [
   {
     id: "0",
     pending: false,
-    ...createUnoGameFromMemento(finishedUnoMemento, { randomizer: standardRandomizer, shuffler: standardShuffler }),
+    ...createUnoGameFromMemento(finishedUnoMemento, {
+      randomizer: standardRandomizer,
+      shuffler: standardShuffler,
+    }),
   },
-]
+];
 
 async function startServer(store: GameStore) {
   const pubsub: PubSub = new PubSub();
@@ -137,7 +138,9 @@ function configAndStart() {
     const dbName = dbNameIndex !== -1 ? process.argv[dbNameIndex + 1] : "test";
     startServer(MongoStore(connectionString, dbName, standardRandomizer));
   } else {
-    const indexedGames = games.map(gameMemento => from_memento(gameMemento, standardRandomizer));
+    const indexedGames = games.map((gameMemento) =>
+      from_memento(gameMemento, standardRandomizer)
+    );
     startServer(new MemoryStore(...indexedGames));
   }
 }
