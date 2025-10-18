@@ -1,61 +1,79 @@
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
-import { GameStore, ActiveGame, PendingGame, ServerError, ServerModel } from "./servermodel";
+import {
+  GameStore,
+  ActiveGame,
+  PendingGame,
+  ServerError,
+  ServerModel,
+} from "./servermodel";
 
 export interface Broadcaster {
-    send: (message: ActiveGame | PendingGame) => Promise<void>
+  send: (message: ActiveGame | PendingGame) => Promise<void>;
 }
 
 export type API = {
-    new_game: (creator: string, numberOfPlayers: number) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
-    pending_games: () => Promise<ServerResponse<PendingGame[], ServerError>>
-    pending_game: (id: string) => Promise<ServerResponse<PendingGame, ServerError>>
-    join: (id: string, player: string) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
-    games: () => Promise<ServerResponse<ActiveGame[], ServerError>>
-    game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>
-}
+  new_game: (
+    creator: string,
+    numberOfPlayers: number
+  ) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>;
+  pending_games: () => Promise<ServerResponse<PendingGame[], ServerError>>;
+  pending_game: (
+    id: string
+  ) => Promise<ServerResponse<PendingGame, ServerError>>;
+  join: (
+    id: string,
+    player: string
+  ) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>;
+  games: () => Promise<ServerResponse<ActiveGame[], ServerError>>;
+  game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>;
+};
 
-export const create_api = (broadcaster: Broadcaster, store: GameStore, randomizer: Randomizer): API => {
-    const server = new ServerModel(store, randomizer)
+export const create_api = (
+  broadcaster: Broadcaster,
+  store: GameStore,
+  randomizer: Randomizer
+): API => {
+  const server = new ServerModel(store, randomizer);
 
-    async function new_game(creator: string, numberOfPlayers: number) {
-        const new_game = await server.add(creator, numberOfPlayers)
-        new_game.process(broadcast)
-        return new_game
-    }
+  async function new_game(creator: string, numberOfPlayers: number) {
+    const new_game = await server.add(creator, numberOfPlayers);
+    new_game.process(broadcast);
+    return new_game;
+  }
 
-    async function games() {
-        return server.all_games()
-    }
+  async function games() {
+    return server.all_games();
+  }
 
-    async function game(id: string) {
-        return server.game(id)
-    }
+  async function game(id: string) {
+    return server.game(id);
+  }
 
-    function pending_games() {
-        return server.all_pending_games()
-    }
+  function pending_games() {
+    return server.all_pending_games();
+  }
 
-    function pending_game(id: string) {
-        return server.pending_game(id)
-    }
+  function pending_game(id: string) {
+    return server.pending_game(id);
+  }
 
-    async function join(id: string, player: string) {
-        const game = await server.join(id, player)
-        game.process(broadcast)
-        return game
-    }
+  async function join(id: string, player: string) {
+    const game = await server.join(id, player);
+    game.process(broadcast);
+    return game;
+  }
 
-    async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
-        broadcaster.send(game)
-    }
+  async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
+    broadcaster.send(game);
+  }
 
-    return {
-        new_game,
-        pending_games,
-        pending_game,
-        join,
-        games,
-        game
-    }
-}
+  return {
+    new_game,
+    pending_games,
+    pending_game,
+    join,
+    games,
+    game,
+  };
+};
