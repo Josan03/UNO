@@ -1,6 +1,23 @@
-enum Color { RED YELLOW GREEN BLUE }
-enum Direction { CLOCKWISE COUNTERCLOCKWISE }
-enum Type { NUMBERED SKIP REVERSE DRAW WILD WILD_DRAW }
+enum Color { 
+    RED
+    YELLOW
+    GREEN
+    BLUE
+}
+
+enum Direction { 
+    CLOCKWISE
+    COUNTERCLOCKWISE
+}
+
+enum Type { 
+    NUMBERED
+    SKIP
+    REVERSE
+    DRAW
+    WILD
+    WILD_DRAW
+}
 
 type Numbered {
     type: Type!
@@ -20,14 +37,13 @@ type Wild {
 union Card = Numbered | ColoredAction | Wild
 
 type Round {
-    id: ID!
     players: [String!]!
     hands: [[Card!]!]!
     drawPile: [Card!]!
     discardPile: [Card!]!
     currentColor: Color!
     currentDirection: Direction!
-    dealerIndex: Int!
+    dealer: Int!
     playerInTurn: Int!
 }
 
@@ -35,7 +51,6 @@ type PendingGame {
     id: ID!
     pending: Boolean
     creator: String!
-    players: [String!]!
     numberOfPlayers: Int!
 }
 

@@ -18,7 +18,7 @@ export const types: Readonly<Type[]> = [
   "WILD DRAW",
 ] as const;
 
-export type Deck = {
+export interface Deck {
   readonly size: number;
   filter(pred: (card: Card) => boolean): Deck;
   deal(): Card | undefined;

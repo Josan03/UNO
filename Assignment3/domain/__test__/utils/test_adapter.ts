@@ -6,15 +6,13 @@ import {
 } from "../../src/model/deck";
 import { createRoundClassFromMemento, Round } from "../../src/model/round";
 import { RoundClass } from "../../src/model/round";
-import { createUnoGame, createUnoGameFromMemento } from "../../src/model/uno";
+import { createUnoGame, createUnoGameFromMemento, Uno } from "../../src/model/uno";
 import {
   Randomizer,
   Shuffler,
   standardRandomizer,
   standardShuffler,
 } from "../../src/utils/random_utils";
-
-type Game = any
 
 export function createInitialDeck(): Deck {
   return createFullDeck();
@@ -57,7 +55,7 @@ export type GameConfig = {
   cardsPerPlayer: number;
 };
 
-export function createGame(props: Partial<GameConfig>): Game {
+export function createGame(props: Partial<GameConfig>): Uno {
   return createUnoGame(
     props.players,
     props.targetScore,
@@ -73,6 +71,6 @@ export function createGameFromMemento(
   memento: any,
   randomizer: Randomizer = standardRandomizer,
   shuffler: Shuffler<Card> = standardShuffler
-): Game {
+): Uno {
   return createUnoGameFromMemento(memento, { randomizer, shuffler })
 }

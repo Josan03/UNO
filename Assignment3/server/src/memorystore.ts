@@ -1,20 +1,20 @@
-import { GameStore, IndexedGame, PendingGame, StoreError } from "./servermodel"
+import { GameStore, ActiveGame, PendingGame, StoreError } from "./servermodel"
 import { ServerResponse } from "./response"
 
 const not_found = (key: any): StoreError => ({ type: 'Not Found', key })
 
 export class MemoryStore implements GameStore {
-    private _games: IndexedGame[]
+    private _games: ActiveGame[]
     private _pending_games: PendingGame[]
     private next_id: number = 0
 
-    constructor(...games: IndexedGame[]) {
-        this._games = [...games]
-        this._pending_games = []
+    constructor(games: ActiveGame[], pending_games: PendingGame[]) {
+        this._games = games
+        this._pending_games = pending_games
     }
 
     games() {
-        return ServerResponse.ok([...this._games])
+        return ServerResponse.ok([...this._games]);
     }
 
     async game(id: string) {
@@ -23,12 +23,12 @@ export class MemoryStore implements GameStore {
         return game.map(async g => g!)
     }
 
-    add(game: IndexedGame) {
+    add(game: ActiveGame) {
         this._games.push(game)
         return ServerResponse.ok(game)
     }
 
-    update(game: IndexedGame) {
+    update(game: ActiveGame) {
         const index = this._games.findIndex(g => g.id === game.id)
         if (index === -1) {
             return ServerResponse.error(not_found(index))

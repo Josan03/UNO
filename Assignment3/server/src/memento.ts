@@ -1,26 +1,22 @@
-import { GameMemento } from "../../domain/src/model/uno"
-import { Randomizer } from "../../domain/src/utils/random_utils"
-import { IndexedGame } from "./servermodel"
-import * as UnoGame from "../../domain/src/model/uno"
+import { createUnoGameFromMemento, UnoMemento } from "../../domain/src/model/uno";
+import { Randomizer } from "../../domain/src/utils/random_utils";
+import { ActiveGame } from "./servermodel";
+import { standardShuffler } from "../../domain/src/utils/random_utils";
 
-export type IndexedMemento = GameMemento & { readonly id: string, readonly pending: false }
+export type ActiveMemento = UnoMemento & { id: string, pending: false }
 
-export function from_memento(m: IndexedMemento, randomizer: Randomizer): IndexedGame {
-    const game = UnoGame.createUnoGameFromMemento(m, { randomizer })
-
+export function from_memento(m: ActiveMemento, randomizer: Randomizer): ActiveGame {
     return {
         id: m.id,
         pending: false,
-        ...game,
+        ...createUnoGameFromMemento(m, { randomizer: randomizer, shuffler: standardShuffler })
     }
 }
 
-export function to_memento(y: IndexedGame): IndexedMemento {
-    const gameMemento = y.toMemento()
-
+export function to_memento(y: ActiveGame): ActiveMemento {
     return {
         id: y.id,
         pending: y.pending,
-        ...gameMemento,
+        ...y
     }
 }

@@ -2,35 +2,46 @@ import { Randomizer, Shuffler, standardRandomizer, standardShuffler } from "../u
 import { Card } from "./card";
 import { createRoundClassFromMemento, Round, RoundClass } from "./round"
 
-export type Game = {
+export type UnoSpecs = {
+    creator?: string,
+    players: string[],
+    numberOfPlayers?: number
+}
+
+export type UnoOptions = UnoSpecs & {
+    randomizer?: Randomizer
+}
+
+export interface Uno {
     readonly players: string[];
     readonly targetScore: number;
-    readonly playerCount: number;
+    readonly playersCount: number;
     scores: number[];
     cardsPerPlayer?: number;
-    _currentRound?: Round | undefined;
+    currentRound?: Round;
+
     player(index: number): string;
     score(index: number): number;
     winner(): number | undefined;
-    currentRound(): Round | undefined;
-    toMemento(): GameMemento;
+    getCurrentRound(): Round | undefined;
+    toMemento(): UnoMemento;
 };
 
-export type GameMemento = {
-    players: string[];
-    targetScore: number;
+export interface UnoMemento {
+    readonly players: Readonly<string[]>;
     scores: number[];
-    cardsPerPlayer?: number;
-    currentRound?: any
+    readonly targetScore: Readonly<number>;
+    readonly cardsPerPlayer?: Readonly<number>;
+    currentRound?: Readonly<Round>;
 };
 
-export class UnoGame implements Game {
+export class UnoGame implements Uno {
     public players: string[];
+    public scores: number[];
     public targetScore: number;
     public playersCount: number;
-    public readonly cardsPerPlayer: number;
-    public scores: number[];
-    public _currentRound: Round | undefined;
+    public cardsPerPlayer?: number;
+    public currentRound?: Round | undefined;
     private readonly randomizer: Randomizer;
     private readonly shuffler: Shuffler<Card>;
 
@@ -61,12 +72,12 @@ export class UnoGame implements Game {
         this.cardsPerPlayer = opts?.cardsPerPlayer ?? 7;
 
         if (opts?.roundFromMemento) {
-            this._currentRound = createRoundClassFromMemento(opts.roundFromMemento, this.shuffler)
-            this._currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this._currentRound!));
+            this.currentRound = createRoundClassFromMemento(opts.roundFromMemento, this.shuffler)
+            this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
         } else if (opts?.startRound !== false) {
             const dealer = Math.floor(this.randomizer(this.players.length));
-            this._currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
-            this._currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this._currentRound!));
+            this.currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
+            this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
         }
     }
 
@@ -99,23 +110,23 @@ export class UnoGame implements Game {
         return winIdx;
     }
 
-    currentRound(): Round | undefined {
-        return this._currentRound;
+    getCurrentRound(): Round | undefined {
+        return this.currentRound;
     }
 
-    toMemento(): GameMemento {
-        const base: GameMemento = {
+    toMemento(): UnoMemento {
+        const base: UnoMemento = {
             players: this.players.slice(),
             targetScore: this.targetScore,
             scores: this.scores,
             cardsPerPlayer: this.cardsPerPlayer ?? 7
         };
 
-        if (this._currentRound) {
-            base.currentRound = this._currentRound.toMemento();
+        if (this.currentRound) {
+            base.currentRound = this.currentRound.toMemento();
         }
 
-        return base as GameMemento;
+        return base as UnoMemento;
     }
 
     private onRoundEnd(winnerIndex: number, round: Round) {
@@ -123,13 +134,13 @@ export class UnoGame implements Game {
         this.scores[winnerIndex] += gained;
 
         if (this.winner() !== undefined) {
-            this._currentRound = undefined;
+            this.currentRound = undefined;
             return;
         }
 
         const dealer = winnerIndex;
-        this._currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
-        this._currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this._currentRound!));
+        this.currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
+        this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
     }
 }
 
@@ -137,16 +148,16 @@ export function createUnoGame(
     players?: string[],
     targetScore?: number,
     opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card>; cardsPerPlayer?: number, startRound?: boolean, roundFromMemento?: any }
-): Game {
+): Uno {
     const p = players ?? ["A", "B"];
     const t = targetScore ?? 500;
     return new UnoGame(p, t, { ...opts });
 }
 
 export function createUnoGameFromMemento(
-    m: GameMemento,
+    m: UnoMemento,
     opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card> }
-): Game {
+): Uno {
     if (!Array.isArray(m.players) || m.players.length < 2) {
         throw new Error("Invalid memento: at least 2 players are required.");
     }

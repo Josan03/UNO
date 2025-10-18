@@ -46,15 +46,15 @@ describe("Game set up", () => {
     expect(() => game.player(4)).toThrow()
   })
   it("starts a round", () => {
-    expect(game.currentRound()).toBeDefined()
+    expect(game.getCurrentRound()).toBeDefined()
   })
   it("doesn't start a new round if no action is taken", () => {
-    const round = game.currentRound()
-    expect(game.currentRound()).toBe(round)
+    const round = game.getCurrentRound()
+    expect(game.getCurrentRound()).toBe(round)
   })
   it("selects a random player as dealer", () => {
     const game: Game = createGame({ players: ['a', 'b', 'c', 'd'], targetScore: 500, randomizer: () => 1 })
-    expect(game.currentRound()?.dealer).toBe(1)
+    expect(game.getCurrentRound()?.dealer).toBe(1)
   })
 })
 
@@ -83,7 +83,7 @@ describe("Playing a round", () => {
 
   describe("while the round is still running", () => {
     const game = createGameFromMemento(memento)
-    const round = game.currentRound()!
+    const round = game.getCurrentRound()!
     round.draw()
     test("no winner has been found", () => {
       expect(game.winner()).toBeUndefined()
@@ -95,12 +95,12 @@ describe("Playing a round", () => {
       expect(game.score(3)).toBe(0)
     })
     test("the round is the same", () => {
-      expect(game.currentRound()).toBe(round)
+      expect(game.getCurrentRound()).toBe(round)
     })
   })
   describe("when the round is over", () => {
     const game = createGameFromMemento(memento)
-    const round = game.currentRound()!
+    const round = game.getCurrentRound()!
     round.draw()
     round.play(0)
     test("the setup is as expected", () => {
@@ -118,7 +118,7 @@ describe("Playing a round", () => {
       expect(game.score(3)).toBe(0)
     })
     test("a new round is started", () => {
-      expect(game.currentRound()).not.toBe(round)
+      expect(game.getCurrentRound()).not.toBe(round)
     })
   })
 })
@@ -147,7 +147,7 @@ describe("ending the second round", () => {
   }
 
   const game = createGameFromMemento(memento)
-  const round2 = game.currentRound()!
+  const round2 = game.getCurrentRound()!
   round2.play(0)
 
   test("the game still has no winner", () => {
@@ -160,7 +160,7 @@ describe("ending the second round", () => {
     expect(game.score(3)).toBe(0)
   })
   test("a new round is started", () => {
-    expect(game.currentRound()).not.toBe(round2)
+    expect(game.getCurrentRound()).not.toBe(round2)
   })
 })
 
@@ -188,7 +188,7 @@ describe("ending the third round", () => {
   }
 
   const game = createGameFromMemento(memento)
-  const round3 = game.currentRound()!
+  const round3 = game.getCurrentRound()!
   round3.play(0)
 
   test("player 0 won", () => {
@@ -201,6 +201,6 @@ describe("ending the third round", () => {
     expect(game.score(3)).toBe(0)
   })
   test("a new round is not started", () => {
-    expect(game.currentRound()).toBeUndefined()
+    expect(game.getCurrentRound()).toBeUndefined()
   })
 })  

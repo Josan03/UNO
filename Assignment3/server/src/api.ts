@@ -1,18 +1,18 @@
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
-import { GameStore, IndexedGame, PendingGame, ServerError, ServerModel } from "./servermodel";
+import { GameStore, ActiveGame, PendingGame, ServerError, ServerModel } from "./servermodel";
 
 export interface Broadcaster {
-    send: (message: IndexedGame | PendingGame) => Promise<void>
+    send: (message: ActiveGame | PendingGame) => Promise<void>
 }
 
 export type API = {
-    new_game: (creator: string, numberOfPlayers: number) => Promise<ServerResponse<IndexedGame | PendingGame, ServerError>>
+    new_game: (creator: string, numberOfPlayers: number) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
     pending_games: () => Promise<ServerResponse<PendingGame[], ServerError>>
     pending_game: (id: string) => Promise<ServerResponse<PendingGame, ServerError>>
-    join: (id: string, player: string) => Promise<ServerResponse<IndexedGame | PendingGame, ServerError>>
-    games: () => Promise<ServerResponse<IndexedGame[], ServerError>>
-    game: (id: string) => Promise<ServerResponse<IndexedGame, ServerError>>
+    join: (id: string, player: string) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
+    games: () => Promise<ServerResponse<ActiveGame[], ServerError>>
+    game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>
 }
 
 export const create_api = (broadcaster: Broadcaster, store: GameStore, randomizer: Randomizer): API => {
@@ -29,7 +29,6 @@ export const create_api = (broadcaster: Broadcaster, store: GameStore, randomize
     }
 
     async function game(id: string) {
-        // Problem here with ID
         return server.game(id)
     }
 
@@ -47,7 +46,7 @@ export const create_api = (broadcaster: Broadcaster, store: GameStore, randomize
         return game
     }
 
-    async function broadcast(game: IndexedGame | PendingGame): Promise<void> {
+    async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
         broadcaster.send(game)
     }
 

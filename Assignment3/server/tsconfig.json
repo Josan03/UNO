@@ -1,14 +1,12 @@
 {
-  "include": ["**/*"],
-  "exclude": ["node_modules"],
   "compilerOptions": {
-    "lib": ["es2023", "dom"],
-    "module": "NodeNext",
-    "target": "es2022",
-    "outDir": "./dist/",
-    "strict": true,
+    "rootDirs": ["src"],
+    "outDir": "dist",
+    "lib": ["es2023"],
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "moduleResolution": "NodeNext"
+    "types": ["node"]
   }
 }

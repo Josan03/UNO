@@ -7,8 +7,8 @@ const currentRoundMemento = {
     [
       { type: 'WILD' },
       { type: 'DRAW', color: 'GREEN' },
-    ], 
-    [ { type: 'NUMBERED', color: 'RED', number: 7} ],
+    ],
+    [{ type: 'NUMBERED', color: 'RED', number: 7 }],
     [
       { type: 'SKIP', color: 'RED' },
     ],
@@ -24,7 +24,7 @@ const currentRoundMemento = {
   currentDirection: 'clockwise',
   dealer: 2,
   playerInTurn: 1,
-}  
+}
 
 const unoMemento = {
   players: ['A', 'B', 'C'],
@@ -43,7 +43,7 @@ describe("create unfinished game from valid memento", () => {
     expect(game.player(2)).toEqual('C')
   })
   it("reads the round from the memento", () => {
-    expect(game.currentRound()?.toMemento()).toEqual(currentRoundMemento)
+    expect(game.getCurrentRound()?.toMemento()).toEqual(currentRoundMemento)
   })
   it("reads the target score from the memento", () => {
     expect(game.targetScore).toEqual(500)
@@ -57,29 +57,29 @@ describe("create unfinished game from valid memento", () => {
     expect(game.winner()).toBeUndefined()
   })
   it("updates on changes in the current round", () => {
-    game.currentRound()?.play(0) // Last card from player 1
+    game.getCurrentRound()?.play(0) // Last card from player 1
     expect(game.winner()).toEqual(1)
   })
 })
 
 describe("create game from invalid memento", () => {
   it("fails on too few players", () => {
-    expect(() => createGameFromMemento({...unoMemento, players: ['A']})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, players: ['A'] })).toThrowError()
   })
   it("fails on 0 target score", () => {
-    expect(() => createGameFromMemento({...unoMemento, targetScore: 0})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, targetScore: 0 })).toThrowError()
   })
   it("fails on negative scores", () => {
-    expect(() => createGameFromMemento({...unoMemento, scores: [220, 430, -80]})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, scores: [220, 430, -80] })).toThrowError()
   })
   it("fails with fewer scores than players", () => {
-    expect(() => createGameFromMemento({...unoMemento, scores: [220, 430]})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, scores: [220, 430] })).toThrowError()
   })
   it("fails on several winners", () => {
-    expect(() => createGameFromMemento({...unoMemento, targetScore: 200})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, targetScore: 200 })).toThrowError()
   })
   it("fails on missing current round in an unfinished game", () => {
-    expect(() => createGameFromMemento({...unoMemento, currentRound: undefined})).toThrowError()
+    expect(() => createGameFromMemento({ ...unoMemento, currentRound: undefined })).toThrowError()
   })
 })
 
@@ -93,7 +93,7 @@ const finishedUnoMemento = {
 describe("create unfinished game from valid memento", () => {
   let game = createGameFromMemento(finishedUnoMemento)
   it("doesn't have a current round on a finished game", () => {
-    expect(game.currentRound()).toBeUndefined
+    expect(game.getCurrentRound()).toBeUndefined
   })
   it("reads the scores from the memento", () => {
     expect(game.score(0)).toEqual(220)
@@ -108,11 +108,11 @@ describe("create unfinished game from valid memento", () => {
 
 describe("toMemento", () => {
   it("an unfinished game returns the Memento used to create it", () => {
-      const created = createGameFromMemento(unoMemento)
-      expect(created.toMemento()).toEqual(unoMemento)
+    const created = createGameFromMemento(unoMemento)
+    expect(created.toMemento()).toEqual(unoMemento)
   })
   it("a finished game returns the Memento used to create it", () => {
-      const created = createGameFromMemento(finishedUnoMemento)
-      expect(created.toMemento()).toEqual(finishedUnoMemento)
+    const created = createGameFromMemento(finishedUnoMemento)
+    expect(created.toMemento()).toEqual(finishedUnoMemento)
   })
 })
