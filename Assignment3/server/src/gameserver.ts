@@ -9,7 +9,7 @@ import express from "express"
 import bodyParser from "body-parser"
 import cors from "cors"
 import { expressMiddleware } from "@as-integrations/express5";
-import { create_resolvers, resolvers } from "./resolvers";
+import { create_resolvers } from "./resolvers";
 import { PubSub } from "graphql-subscriptions";
 import { create_api } from "./api";
 import { standardRandomizer } from "../../domain/src/utils/random_utils";
