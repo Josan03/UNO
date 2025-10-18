@@ -29,7 +29,7 @@ export function toGraphQLGame(game: ActiveGame): GraphQLGame {
 }
 
 async function respond_with_error(err: ServerError): Promise<never> {
-    throw new GraphQLError(err.type)
+  throw new GraphQLError(err.type);
 }
 
 async function games(api: API): Promise<GraphQLGame[]> {
@@ -41,11 +41,11 @@ async function games(api: API): Promise<GraphQLGame[]> {
 }
 
 async function pending_games(api: API): Promise<PendingGame[]> {
-    const res = await api.pending_games()
-    return res.resolve({
-        onSuccess: async gs => gs,
-        onError: respond_with_error
-    })
+  const res = await api.pending_games();
+  return res.resolve({
+    onSuccess: async (gs) => gs,
+    onError: respond_with_error,
+  });
 }
 
 export const create_resolvers = (pubsub: PubSub, api: API) => {
