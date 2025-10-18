@@ -20,6 +20,7 @@ const Forbidden: ServerError = { type: 'Forbidden' } as const
 
 export interface GameStore {
     games(): Promise<ServerResponse<ActiveGame[], StoreError>>
+    game(id: string): Promise<ServerResponse<ActiveGame, StoreError>>
     pending_games(): Promise<ServerResponse<PendingGame[], StoreError>>
 }
 
@@ -34,6 +35,10 @@ export class ServerModel {
 
     all_games() {
         return this.store.games()
+    }
+
+    game(id: string) {
+        return this.store.game(id)
     }
 
     all_pending_games() {

@@ -40,6 +40,14 @@ async function games(api: API): Promise<GraphQLGame[]> {
     })
 }
 
+async function game(api: API, args: any): Promise<GraphQLGame> {
+    const res = await api.game(args.id)
+    return res.resolve({
+        onSuccess: async g => toGraphQLGame(g),
+        onError: async e => undefined
+    })
+}
+
 async function pending_games(api: API): Promise<PendingGame[]> {
     const res = await api.pending_games();
     return res.resolve({
@@ -53,6 +61,9 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
         Query: {
             async games() {
                 return games(api)
+            },
+            async game(_, args) {
+                return game(api, args)
             },
             async pending_games() {
                 return pending_games(api)
