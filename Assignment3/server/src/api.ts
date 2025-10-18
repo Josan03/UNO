@@ -13,21 +13,13 @@ export interface Broadcaster {
 }
 
 export type API = {
-  new_game: (
-    creator: string,
-    numberOfPlayers: number
-  ) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>;
-  pending_games: () => Promise<ServerResponse<PendingGame[], ServerError>>;
-  pending_game: (
-    id: string
-  ) => Promise<ServerResponse<PendingGame, ServerError>>;
-  join: (
-    id: string,
-    player: string
-  ) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>;
-  games: () => Promise<ServerResponse<ActiveGame[], ServerError>>;
-  game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>;
-};
+    create_game: (creator: string, numberOfPlayers: number) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
+    pending_games: () => Promise<ServerResponse<PendingGame[], ServerError>>
+    pending_game: (id: string) => Promise<ServerResponse<PendingGame, ServerError>>
+    join: (id: string, player: string) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
+    games: () => Promise<ServerResponse<ActiveGame[], ServerError>>
+    game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>
+}
 
 export const create_api = (
   broadcaster: Broadcaster,
@@ -36,11 +28,11 @@ export const create_api = (
 ): API => {
   const server = new ServerModel(store, randomizer);
 
-  async function new_game(creator: string, numberOfPlayers: number) {
-    const new_game = await server.add(creator, numberOfPlayers);
-    new_game.process(broadcast);
-    return new_game;
-  }
+    async function create_game(creator: string, numberOfPlayers: number) {
+        const newGame = await server.add(creator, numberOfPlayers)
+        newGame.process(broadcast)
+        return newGame
+    }
 
   async function games() {
     return server.all_games();
@@ -68,12 +60,12 @@ export const create_api = (
     broadcaster.send(game);
   }
 
-  return {
-    new_game,
-    pending_games,
-    pending_game,
-    join,
-    games,
-    game,
-  };
-};
+    return {
+        create_game,
+        pending_games,
+        pending_game,
+        join,
+        games,
+        game
+    }
+}
