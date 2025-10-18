@@ -141,6 +141,10 @@ export function createUnoGame(
   return new UnoGame(p, t, { ...opts })
 }
 
+export function from_memento(memento: GameMemento): Game {
+  return createUnoGameFromMemento(memento)
+}
+
 export function createUnoGameFromMemento(
   m: GameMemento,
   opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card> },
@@ -169,17 +173,24 @@ export function createUnoGameFromMemento(
   }
 
   const isFinished = winners.length === 1
+  let roundFromMemento = undefined
+  let startRound = false
 
-  if (!isFinished && !m.currentRound) {
-    throw new Error('Invalid memento: missing currentRound for an unfinished game.')
+  if (!isFinished) {
+    if (m.currentRound) {
+      roundFromMemento = m.currentRound
+    } else {
+      // No round in progress, so start a new one
+      startRound = true
+    }
   }
 
   const game = new UnoGame(m.players, m.targetScore, {
     randomizer: opts?.randomizer ?? standardRandomizer,
     shuffler: opts?.shuffler ?? standardShuffler,
     cardsPerPlayer: m.cardsPerPlayer ?? 7,
-    startRound: false,
-    roundFromMemento: isFinished ? undefined : m.currentRound,
+    startRound,
+    roundFromMemento,
   })
 
   ;(game as any).scores = m.scores.slice()

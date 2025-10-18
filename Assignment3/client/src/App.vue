@@ -1,19 +1,37 @@
 <script setup lang="ts">
-import GameOverScreen from './pages/GameOverScreen.vue'
-import GameScreen from './pages/GameScreen.vue'
-import SetupScreen from './pages/SetupScreen.vue'
-import StartPage from './pages/StartPage.vue'
-import { useCurrentScreen } from './stores/useStores'
-const screen = useCurrentScreen()
+import { useOngoingGamesStore } from './stores/ongoing_games_store'
+import { usePendingGamesStore } from './stores/pending_games_store'
+import { onMounted } from 'vue'
+import * as api from '@/model/API/api'
+
+const ongoingGamesStore = useOngoingGamesStore()
+const pendingGamesStore = usePendingGamesStore()
+
+async function initGames() {
+  const games = await api.games()
+  games.forEach(ongoingGamesStore.upsert)
+
+  const pending_games = await api.pending_games()
+  pending_games.forEach(pendingGamesStore.upsert)
+}
+
+function liveUpdateGames() {
+  api.onGame((game) => {
+    ongoingGamesStore.upsert(game)
+    pendingGamesStore.remove(game)
+  })
+  api.onPending(pendingGamesStore.upsert)
+}
+
+onMounted(async () => {
+  await initGames()
+  liveUpdateGames()
+})
 </script>
 
 <template>
   <main class="w-full h-full">
-    <div class="w-full h-dvh from-blue-900 to-blue-900 via-blue-300 bg-gradient-to-b">
-      <StartPage v-if="screen.currentScreen == 'Start'" />
-      <SetupScreen v-if="screen.currentScreen == 'Setup'" />
-      <GameScreen v-if="screen.currentScreen == 'Game'" />
-      <GameOverScreen v-if="screen.currentScreen == 'GameOver'" />
-    </div>
+    <h1 class="header">UNO</h1>
+    <RouterView />
   </main>
 </template>
