@@ -9,7 +9,7 @@ export type Round = {
   currentPlayerIndex: number;
   dealer: number;
 
-  playerInTurn(): number | undefined;
+  getPlayerInTurn(): number | undefined;
   draw(): void;
   play(playerIndex: number, namedColor?: Color): Card;
 
@@ -144,7 +144,7 @@ export class RoundClass implements Round {
     return this.playersArray[player].cards
   }
 
-  playerInTurn(): number | undefined {
+  getPlayerInTurn(): number | undefined {
     return this.isFinished() ? undefined : this.currentPlayerIndex;
   }
 
@@ -358,7 +358,7 @@ export class RoundClass implements Round {
       currentColor: this.currentColor,
       currentDirection: this.currentDirection,
       dealer: this.dealer,
-      playerInTurn: this.playerInTurn(),
+      playerInTurn: this.getPlayerInTurn(),
     };
   }
 

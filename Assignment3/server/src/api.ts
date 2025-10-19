@@ -1,3 +1,5 @@
+import { C } from "graphql-ws/dist/common-DY-PBNYy";
+import { Color } from "../../domain/src/model/card";
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
 import {
@@ -19,6 +21,7 @@ export type API = {
     join: (id: string, player: string) => Promise<ServerResponse<ActiveGame | PendingGame, ServerError>>
     games: () => Promise<ServerResponse<ActiveGame[], ServerError>>
     game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>
+    play_card: (id: string, playerIndex: number, cardIndex: number, namedColor?: Color) => Promise<ServerResponse<ActiveGame, ServerError>>
 }
 
 export const create_api = (
@@ -30,7 +33,7 @@ export const create_api = (
 
     async function create_game(creator: string, numberOfPlayers: number) {
         const newGame = await server.add(creator, numberOfPlayers)
-        // newGame.process(broadcast)
+        newGame.process(broadcast)
         return newGame
     }
 
@@ -56,6 +59,13 @@ export const create_api = (
         return game;
     }
 
+    async function play_card(id: string, playerIndex: number, cardIndex: number, namedColor?: Color) {
+        const game = await server.play_card(id, playerIndex, cardIndex, namedColor)
+        console.log(game)
+        game.process(broadcast)
+        return game;
+    }
+
     async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
         broadcaster.send(game);
     }
@@ -66,6 +76,7 @@ export const create_api = (
         pending_game,
         join,
         games,
-        game
+        game,
+        play_card,
     }
 }

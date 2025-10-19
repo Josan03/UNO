@@ -9,11 +9,11 @@ import express from "express"
 import bodyParser from "body-parser"
 import cors from "cors"
 import { expressMiddleware } from "@as-integrations/express5";
-import { create_resolvers } from "./resolvers";
+import { create_resolvers, toGraphQLGame } from "./resolvers";
 import { PubSub } from "graphql-subscriptions";
 import { create_api } from "./api";
 import { standardRandomizer } from "../../domain/src/utils/random_utils";
-import { ActiveGame, GameStore } from "./servermodel";
+import { ActiveGame, GameStore, PendingGame } from "./servermodel";
 import { MemoryStore } from "./memorystore";
 
 const currentRoundMemento = {
@@ -77,14 +77,24 @@ const pendingGames = [
 ]
 
 async function startServer(store: GameStore) {
-    const api = create_api(undefined, store, standardRandomizer)
+    const pubsub: PubSub = new PubSub()
+    const broadcaster = {
+        async send(game: PendingGame | ActiveGame) {
+            if (game.pending) {
+                pubsub.publish('PENDING_UPDATED', { pending: game as PendingGame })
+            } else {
+                pubsub.publish('ACTIVE_UPDATED', { active: toGraphQLGame(game as ActiveGame) })
+            }
+        }
+    }
+    const api = create_api(broadcaster, store, standardRandomizer)
 
     try {
         const content = await fs.readFile('./game.sdl', 'utf8')
         const typeDefs = `#graphql
             ${content}
         `
-        const resolvers = create_resolvers(undefined, api)
+        const resolvers = create_resolvers(pubsub, api)
         const schema = makeExecutableSchema({ typeDefs, resolvers })
 
         const app = express();
@@ -99,6 +109,7 @@ async function startServer(store: GameStore) {
 
         const wsServer = new WebSocketServer({
             server: httpServer,
+            path: '/graphql',
         })
 
         const subscriptionServer = useServer({ schema }, wsServer)

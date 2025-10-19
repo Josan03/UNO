@@ -1,3 +1,4 @@
+import { Color } from "../../domain/src/model/card";
 import { createUnoGame, Uno, UnoSpecs } from "../../domain/src/model/uno";
 import { Randomizer } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
@@ -65,8 +66,35 @@ export class ServerModel {
 
     async join(id: string, player: string) {
         const pending_game = await this.store.pending_game(id)
-        // pending_game.process(async game => game.players.push(player))
+        pending_game.process(async game => game.players.push(player))
         return pending_game.flatMap(g => this.startGameIfReady(g))
+    }
+
+    async play_card(id: string, playerIndex: number, cardIndex: number, namedColor: Color) {
+        const game = await this.store.game(id)
+
+        const withTurnCheck = await game.filter(
+            async (g) => {
+                const round = g.currentRound
+                if (!round) return false
+                const inTurn = round.getPlayerInTurn()
+                return Number.isInteger(inTurn) && inTurn === playerIndex
+            },
+            async (_) => ({ type: "Forbidden" } as const)
+        )
+
+        const afterPlay = await withTurnCheck.map(async (g) => {
+            try {
+                g.currentRound.play(cardIndex, namedColor)
+                return g
+            } catch (err) {
+                throw ({ type: "Forbidden" } as const)
+            }
+        }).catch(async (err) => {
+            return ServerResponse.error(err as ServerError)
+        })
+
+        return afterPlay.flatMap(async (g) => this.store.update(g))
     }
 
     private startGameIfReady(pending_game: PendingGame): Promise<ServerResponse<ActiveGame | PendingGame, StoreError>> {
@@ -83,7 +111,7 @@ export class ServerModel {
     private async update(id: string, player: string, processor: (game: ActiveGame) => Promise<unknown>): Promise<ServerResponse<ActiveGame, ServerError>> {
         let uno: ServerResponse<ActiveGame, ServerError> = await this.game(id)
         uno = await uno.filter(async game => game && game.currentRound.player(game.currentRound.currentPlayerIndex) === player, async _ => Forbidden)
-        // uno.process(processor)
+        uno.process(processor)
         return uno.flatMap(async game => this.store.update(game))
     }
 }
