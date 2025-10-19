@@ -1,20 +1,20 @@
-import type { Round } from '@/model/round'
-import { from_memento, type Game } from '@/model/uno'
-import type { GameMemento } from '@/model/uno'
+import type { Round } from '../../../domain/src/model/round'
+import {
+  createUnoGameFromMemento as from_memento,
+  type UnoGame,
+  type UnoSpecs,
+  type UnoMemento,
+} from '../../../domain/src/model/uno'
 
 type Indexed<Y, pending extends boolean> = Readonly<Y & { id: string; pending: pending }>
 
-export type IndexedUno = Indexed<Game, false>
+export type IndexedUno = Indexed<UnoGame, false>
 
-export type IndexedUnoMemento = Indexed<GameMemento, false>
-
-type UnoSpecs = {
-  creator: string
-  number_of_players: number
-}
+export type IndexedUnoMemento = Indexed<UnoMemento, false>
 
 export function from_memento_indexed(m: IndexedUnoMemento): IndexedUno {
-  return { ...from_memento(m), id: m.id, pending: m.pending }
+  const playerCount = m.players.length
+  return { ...from_memento(m), id: m.id, pending: m.pending, playerCount }
 }
 export type IndexedUnoSpecs = Indexed<UnoSpecs, true>
 

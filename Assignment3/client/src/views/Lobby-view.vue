@@ -13,8 +13,11 @@ if (playerStore.player === undefined) router.push('/login')
 const ongoingGamesStore = useOngoingGamesStore()
 const pendingGamesStore = usePendingGamesStore()
 
-const pending_games = computed(() => pendingGamesStore.games.filter((g) => g.pending == true))
+const isParticipant = (g: { players: readonly string[] }) =>
+  g.players.indexOf(playerStore.player ?? '') > -1
 
+const pending_games = computed(() => pendingGamesStore.games.filter((g) => g.pending == true))
+const my_ongoing_games = computed(() => ongoingGamesStore.games.filter((g) => isParticipant(g)))
 //const ongoing_games = computed(() => ongoingGamesStore.games)
 
 //console.log(ongoing_games.value)
@@ -32,6 +35,15 @@ const pending_games = computed(() => pendingGamesStore.games.filter((g) => g.pen
           class="link"
           v-for="game in pending_games"
           :to="`/pending/${game.id}`"
+          :key="game.id"
+          >Pending-Game #{{ game.id }}</RouterLink
+        >
+
+        <h3 class="font-semibold text-lg italic">My Ongoing Games</h3>
+        <RouterLink
+          class="link"
+          v-for="game in my_ongoing_games"
+          :to="`/game/${game.id}`"
           :key="game.id"
           >Game #{{ game.id }}</RouterLink
         >

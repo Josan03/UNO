@@ -33,8 +33,10 @@ onMounted(async () => {
 
 <template>
   <main class="w-full h-full">
-    <h1 class="header">UNO!!</h1>
-    <p>Welcome player: {{ playerStore.player }}</p>
-    <RouterView />
+    <div class="w-full h-dvh from-blue-900 to-blue-900 via-blue-300 bg-gradient-to-b">
+      <h1 class="header">UNO!!</h1>
+      <p>Welcome player: {{ playerStore.player }}</p>
+      <RouterView />
+    </div>
   </main>
 </template>

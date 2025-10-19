@@ -13,7 +13,7 @@ const pendingGamesStore = usePendingGamesStore()
 const ongoingGamesStore = useOngoingGamesStore()
 const playerStore = usePlayerStore()
 
-let id = ref(route.params.id.toString())
+const id = ref(route.params.id.toString())
 
 onBeforeMount(async () => {
   let game = pendingGamesStore.game(id.value)
@@ -47,8 +47,8 @@ watch(
 )
 
 const join = () => {
-  if (game.value && playerStore.player && canJoin.value) {
-    api.join(game.value, playerStore.player)
+  if (game.value?.id && playerStore.player && canJoin.value) {
+    api.join(game.value.id, playerStore.player)
   }
 }
 

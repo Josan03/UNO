@@ -10,6 +10,7 @@ import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
 import { getMainDefinition } from '@apollo/client/utilities'
 import { createClient } from 'graphql-ws'
 import { from_graphql_game, type IndexedUno, type IndexedUnoSpecs } from './game'
+import { PENDING_GAMES_QUERY, PENDING_GAME_BY_ID_QUERY, JOIN_GAME_MUTATION } from './graphql-schema'
 
 const wsLink = new GraphQLWsLink(
   createClient({
@@ -178,6 +179,55 @@ export async function game(id: string): Promise<IndexedUno | undefined> {
           players
           targetScore
           scores
+          currentRound {
+            players
+            currentColor
+            currentDirection
+            dealer
+            playerInTurn
+            hands {
+              ... on Numbered {
+                type
+                color
+                number
+              }
+              ... on ColoredAction {
+                type
+                color
+              }
+              ... on Wild {
+                type
+              }
+            }
+            drawPile {
+              ... on Numbered {
+                type
+                color
+                number
+              }
+              ... on ColoredAction {
+                type
+                color
+              }
+              ... on Wild {
+                type
+              }
+            }
+            discardPile {
+              ... on Numbered {
+                type
+                color
+                number
+              }
+              ... on ColoredAction {
+                type
+                color
+              }
+              ... on Wild {
+                type
+              }
+            }
+          }
         }
       }
     `,
@@ -187,37 +237,13 @@ export async function game(id: string): Promise<IndexedUno | undefined> {
   return from_graphql_game(response.game)
 }
 
-const PENDING_GAMES_QUERY = gql`
-  query PendingGames {
-    pending_games {
-      id
-      pending
-      creator
-      numberOfPlayers
-      players
-    }
-  }
-`
-
-const PENDING_GAME_QUERY = gql`
-  query PendingGame($pendingGameId: ID!) {
-    pending_game(id: $pendingGameId) {
-      id
-      pending
-      creator
-      numberOfPlayers
-      players
-    }
-  }
-`
-
 export async function pending_games(): Promise<IndexedUnoSpecs[]> {
   const response = await query(PENDING_GAMES_QUERY)
   return response.pending_games
 }
 
 export async function pending_game(id: string): Promise<IndexedUnoSpecs | undefined> {
-  const response = await query(PENDING_GAME_QUERY, { pendingGameId: id })
+  const response = await query(PENDING_GAME_BY_ID_QUERY, { pendingGameId: id })
   if (response.pending_game === undefined) return undefined
   return response.pending_game
 }
@@ -323,46 +349,27 @@ export async function create_game(
   }
 }
 
-export async function join(
-  game: IndexedUnoSpecs,
-  player: string,
-): Promise<IndexedUnoSpecs | IndexedUno> {
-  const response = await mutate(
-    gql`
-      mutation Join($id: ID!, $player: String!) {
-        join(id: $id, player: $player) {
-          ... on PendingGame {
-            id
-            pending
-            creator
-            number_of_players
-            players
-          }
-          ... on ActiveGame {
-            id
-            pending
-            cardsPerPlayer
-            players
-            targetScore
-            scores
-            currentRound
-          }
-        }
-      }
-    `,
-    { id: game.id, player },
-  )
+export async function join(gameId: string, player: string): Promise<IndexedUnoSpecs | IndexedUno> {
+  console.log(`GameId- ${gameId} player - ${player}`)
+  const response = await mutate(JOIN_GAME_MUTATION, { joinGameId: gameId, player })
   const joinedGame = response.join
   if (joinedGame.pending) return joinedGame as IndexedUnoSpecs
   else return from_graphql_game(joinedGame)
 }
 
-export async function play_card(
-  playCardId: number,
-  playerIndex: number,
-  cardIndex: number,
-  namedColor: string,
-): Promise<IndexedUno> {
+export type PlayCardApiProps = {
+  playCardId: number
+  playerIndex: number
+  cardIndex: number
+  namedColor: string
+}
+
+export async function play_card({
+  playCardId,
+  playerIndex,
+  cardIndex,
+  namedColor,
+}: PlayCardApiProps): Promise<IndexedUno> {
   const response = await mutate(
     gql`
       mutation Play_card(

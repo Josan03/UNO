@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import UnoCard from '@/components/UnoCard.vue'
-import type { Card, Color } from '@/model/card'
+import type { Card, Color } from '../../../domain/src/model/card'
 import { ref } from 'vue'
+import type { PlayCardApiProps } from '@/graphql/api'
 
-const props = defineProps<{
+export type PlayerHandProps = {
+  playCardId: number
   name: string
   index: number
   isActive: boolean
   cards: Card[]
-  onPlay: (index: number, color?: Color) => void
-}>()
+  onPlay: ({
+    cardIndex,
+    namedColor,
+    playerIndex,
+    playCardId,
+  }: PlayCardApiProps) => void | Promise<void>
+}
+
+const props = defineProps<PlayerHandProps>()
 
 // track wild selection UI locally
 const wildChoice = ref<number | null>(null)
@@ -21,13 +30,23 @@ function handleClick(card: Card, idx: number) {
   if (card.type === 'WILD' || card.type === 'WILD DRAW') {
     wildChoice.value = idx
   } else {
-    props.onPlay(idx)
+    props.onPlay({
+      cardIndex: idx,
+      playCardId: props.playCardId,
+      playerIndex: props.index,
+      namedColor: card.color,
+    })
   }
 }
 
 function chooseColor(color: Color) {
   if (wildChoice.value === null) return
-  props.onPlay(wildChoice.value, color)
+  props.onPlay({
+    cardIndex: wildChoice.value,
+    playCardId: props.playCardId,
+    playerIndex: props.index,
+    namedColor: color,
+  })
   wildChoice.value = null
 }
 </script>

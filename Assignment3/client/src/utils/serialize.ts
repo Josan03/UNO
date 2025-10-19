@@ -1,4 +1,3 @@
-import type { RoundClass } from '@/model/round'
 import type { BotWorkerMessage } from '@/workers/bot-worker'
 
 /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Card } from '@/model/card'
+import type { Card } from '../../../domain/src/model/card'
 
 defineProps<{
   card?: Card

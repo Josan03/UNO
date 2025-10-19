@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UnoCard from '@/components/UnoCard.vue'
-import type { Card } from '@/model/card'
+import type { Card } from '../../../domain/src/model/card'
 
 defineProps<{
   name: string

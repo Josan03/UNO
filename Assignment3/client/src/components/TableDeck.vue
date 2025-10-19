@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Card } from '@/model/deck'
+import type { Card } from '../../../domain/src/model/deck'
 import UnoCard from './UnoCard.vue'
 
 defineProps<{

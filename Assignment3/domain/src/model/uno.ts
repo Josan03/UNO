@@ -8,14 +8,14 @@ import { Card } from "./card";
 import { createRoundClassFromMemento, Round, RoundClass } from "./round";
 
 export type UnoSpecs = {
-  creator?: string,
-  players: string[],
-  numberOfPlayers?: number
-}
+  creator?: string;
+  players: string[];
+  numberOfPlayers?: number;
+};
 
 export type UnoOptions = UnoSpecs & {
-  randomizer?: Randomizer
-}
+  randomizer?: Randomizer;
+};
 
 export interface Uno {
   readonly players: string[];
@@ -30,7 +30,7 @@ export interface Uno {
   winner(): number | undefined;
   getCurrentRound(): Round | undefined;
   toMemento(): UnoMemento;
-};
+}
 
 export interface UnoMemento {
   readonly players: Readonly<string[]>;
@@ -38,7 +38,7 @@ export interface UnoMemento {
   readonly targetScore: Readonly<number>;
   readonly cardsPerPlayer?: Readonly<number>;
   currentRound?: Readonly<Round>;
-};
+}
 
 export class UnoGame implements Uno {
   public players: string[];
@@ -77,12 +77,24 @@ export class UnoGame implements Uno {
     this.cardsPerPlayer = opts?.cardsPerPlayer ?? 7;
 
     if (opts?.roundFromMemento) {
-      this.currentRound = createRoundClassFromMemento(opts.roundFromMemento, this.shuffler)
-      this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
+      this.currentRound = createRoundClassFromMemento(
+        opts.roundFromMemento,
+        this.shuffler
+      );
+      this.currentRound.onEnd(({ winner }) =>
+        this.onRoundEnd(winner, this.currentRound!)
+      );
     } else if (opts?.startRound !== false) {
       const dealer = Math.floor(this.randomizer(this.players.length));
-      this.currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
-      this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
+      this.currentRound = new RoundClass(
+        this.players,
+        dealer,
+        this.shuffler,
+        this.cardsPerPlayer
+      );
+      this.currentRound.onEnd(({ winner }) =>
+        this.onRoundEnd(winner, this.currentRound!)
+      );
     }
   }
 
@@ -124,7 +136,7 @@ export class UnoGame implements Uno {
       players: this.players.slice(),
       targetScore: this.targetScore,
       scores: this.scores,
-      cardsPerPlayer: this.cardsPerPlayer ?? 7
+      cardsPerPlayer: this.cardsPerPlayer ?? 7,
     };
 
     if (this.currentRound) {
@@ -144,15 +156,28 @@ export class UnoGame implements Uno {
     }
 
     const dealer = winnerIndex;
-    this.currentRound = new RoundClass(this.players, dealer, this.shuffler, this.cardsPerPlayer);
-    this.currentRound.onEnd(({ winner }) => this.onRoundEnd(winner, this.currentRound!));
+    this.currentRound = new RoundClass(
+      this.players,
+      dealer,
+      this.shuffler,
+      this.cardsPerPlayer
+    );
+    this.currentRound.onEnd(({ winner }) =>
+      this.onRoundEnd(winner, this.currentRound!)
+    );
   }
 }
 
 export function createUnoGame(
   players?: string[],
   targetScore?: number,
-  opts?: { randomizer?: Randomizer; shuffler?: Shuffler<Card>; cardsPerPlayer?: number, startRound?: boolean, roundFromMemento?: any }
+  opts?: {
+    randomizer?: Randomizer;
+    shuffler?: Shuffler<Card>;
+    cardsPerPlayer?: number;
+    startRound?: boolean;
+    roundFromMemento?: any;
+  }
 ): Uno {
   const p = players ?? ["A", "B"];
   const t = targetScore ?? 500;
@@ -191,19 +216,24 @@ export function createUnoGameFromMemento(
   }
 
   const isFinished = winners.length === 1;
+  let roundFromMemento = undefined;
+  let startRound = false;
 
-  if (!isFinished && !m.currentRound) {
-    throw new Error(
-      "Invalid memento: missing currentRound for an unfinished game."
-    );
+  if (!isFinished) {
+    if (m.currentRound) {
+      roundFromMemento = m.currentRound;
+    } else {
+      // No round in progress, so start a new one
+      startRound = true;
+    }
   }
 
   const game = new UnoGame(m.players, m.targetScore, {
     randomizer: opts?.randomizer ?? standardRandomizer,
     shuffler: opts?.shuffler ?? standardShuffler,
     cardsPerPlayer: m.cardsPerPlayer ?? 7,
-    startRound: false,
-    roundFromMemento: isFinished ? undefined : m.currentRound,
+    startRound,
+    roundFromMemento,
   });
 
   (game as any).scores = m.scores.slice();
