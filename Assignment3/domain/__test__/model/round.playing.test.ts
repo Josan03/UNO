@@ -45,9 +45,9 @@ describe("Playing a card", () => {
       expect(round.discardPile().top()).toEqual(card);
     });
     it("moves the action to the next hand", () => {
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(1);
+      expect(round.getPlayerInTurn()).toEqual(1);
     });
     it("changes color to the played color", () => {
       const shuffler = shuffleBuilder()
@@ -81,9 +81,9 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler,
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(2);
+      expect(round.getPlayerInTurn()).toEqual(2);
     });
   });
 
@@ -102,9 +102,9 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler: builder.build(),
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(3);
+      expect(round.getPlayerInTurn()).toEqual(3);
     });
     it("makes the reversing persistent", () => {
       builder.hand(3).is({ type: "NUMBERED", color: "BLUE" });
@@ -113,10 +113,10 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler: builder.build(),
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(2); // Here should be 0 instead of 2
+      expect(round.getPlayerInTurn()).toEqual(2); // Here should be 0 instead of 2
     });
     it("reverses the reversing", () => {
       builder
@@ -129,11 +129,11 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler: builder.build(),
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
       round.play(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(3);
+      expect(round.getPlayerInTurn()).toEqual(3);
     });
   });
 
@@ -152,9 +152,9 @@ describe("Playing a card", () => {
       });
     });
     it("skips the next player", () => {
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0);
-      expect(round.playerInTurn()).toEqual(2);
+      expect(round.getPlayerInTurn()).toEqual(2);
     });
     it("gives the next player 2 cards", () => {
       round.play(0);
@@ -182,9 +182,9 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler: builder.build(),
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0, "RED");
-      expect(round.playerInTurn()).toEqual(1);
+      expect(round.getPlayerInTurn()).toEqual(1);
     });
     it("changes color to the chosen color", () => {
       builder.hand(1).is({ color: "RED" });
@@ -216,9 +216,9 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler,
       });
-      expect(round.playerInTurn()).toEqual(0);
+      expect(round.getPlayerInTurn()).toEqual(0);
       round.play(0, "RED");
-      expect(round.playerInTurn()).toEqual(2);
+      expect(round.getPlayerInTurn()).toEqual(2);
     });
     it("gives the next player 4 cards", () => {
       const shuffler = builder.build();
@@ -396,7 +396,7 @@ describe("Drawing a card", () => {
         shuffler,
       });
       round.draw();
-      expect(round.playerInTurn()).toBe(1);
+      expect(round.getPlayerInTurn()).toBe(1);
     });
     it("doesn't move to the next player if the card is unplayable", () => {
       const shuffler = builder
@@ -409,7 +409,7 @@ describe("Drawing a card", () => {
         shuffler,
       });
       round.draw();
-      expect(round.playerInTurn()).toBe(0);
+      expect(round.getPlayerInTurn()).toBe(0);
     });
   });
 
@@ -507,8 +507,8 @@ describe("special 2-player rules", () => {
       .is({ type: "REVERSE", color: "BLUE" })
       .build();
     const round = createRound({ players: ["a", "b"], dealer: 1, shuffler });
-    expect(round.playerInTurn()).toEqual(0);
+    expect(round.getPlayerInTurn()).toEqual(0);
     round.play(0);
-    expect(round.playerInTurn()).toEqual(0);
+    expect(round.getPlayerInTurn()).toEqual(0);
   });
 });

@@ -4,6 +4,8 @@ import { GraphQLError } from "graphql";
 import { Round } from "../../domain/src/model/round";
 import { ActiveGame, PendingGame, ServerError } from "./servermodel";
 import { to_memento } from "./memento";
+import { subscribe } from "diagnostics_channel";
+import { Color } from "../../domain/src/model/card";
 
 type GraphQLGame = {
     id: string;
@@ -61,6 +63,27 @@ async function create_game(api: API, args: { creator: string, numberOfPlayers: n
     })
 }
 
+async function join_game(api: API, args: { id: string, player: string }) {
+    const res = await api.join(args.id, args.player)
+    return res.resolve({
+        onSuccess: async game => {
+            if (game.pending)
+                return game
+            else
+                return toGraphQLGame(game)
+        },
+        onError: respond_with_error
+    })
+}
+
+async function play_card(api: API, args: { id: string, playerIndex: number, cardIndex: number, namedColor?: Color }) {
+    const res = await api.play_card(args.id, args.playerIndex, args.cardIndex, args.namedColor)
+    return res.resolve({
+        onSuccess: async (g) => toGraphQLGame(g),
+        onError: respond_with_error
+    })
+}
+
 async function pending_games(api: API): Promise<PendingGame[]> {
     const res = await api.pending_games();
     return res.resolve({
@@ -107,9 +130,23 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
             },
         },
         Mutation: {
-            create_game(_, args: { creator: string, numberOfPlayers: number }) {
+            async create_game(_, args: { creator: string, numberOfPlayers: number }) {
                 return create_game(api, args)
-            }
-        }
+            },
+            async join_game(_, args: { id: string, player: string }) {
+                return join_game(api, args)
+            },
+            async play_card(_, args: { id: string, playerIndex: number, cardIndex: number, namedColor?: Color }) {
+                return play_card(api, args)
+            },
+        },
+        Subscription: {
+            active: {
+                subscribe: () => pubsub.asyncIterableIterator(['ACTIVE_UPDATED'])
+            },
+            pending: {
+                subscribe: () => pubsub.asyncIterableIterator(['PENDING_UPDATED'])
+            },
+        },
     };
 };

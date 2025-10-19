@@ -248,7 +248,7 @@ describe("ending the hand", () => {
       expect(round.winner()).toEqual(0);
     })
     it("makes the player in turn undefined", () => {
-      expect(round.playerInTurn()).toBeUndefined()
+      expect(round.getPlayerInTurn()).toBeUndefined()
     })
     it("ceases play", () => {
       expect(round.canPlay(0)).toBeFalsy()

@@ -77,7 +77,10 @@ type Query {
 type Mutation {
     create_game(creator: String!, numberOfPlayers: Int!): Game!
     join_game(id: ID!, player: String!): Game!
-    register(id: ID!, player: String!): ActiveGame!
+    play_card(id: ID!, playerIndex: Int!, cardIndex: Int!, namedColor: Color): ActiveGame!
+    draw_card(id: ID!, playerIndex: Int!, autoPlayIfPossible: Boolean = false, namedColorIfWild: Color): ActiveGame!
+    say_uno(id: ID!, playerIndex: Int!): ActiveGame!
+    call_uno(id: ID!, accuserIndex: Int!, accusedIndex: Int!): ActiveGame!
 }
 
 type Subscription {
