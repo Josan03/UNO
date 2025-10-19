@@ -1,0 +1,60 @@
+<script setup lang="ts">
+import UnoCard from '@/components/UnoCard.vue'
+import type { Card, Color } from '@/model/card'
+import { ref } from 'vue'
+
+const props = defineProps<{
+  name: string
+  index: number
+  isActive: boolean
+  cards: Card[]
+  onPlay: (index: number, color?: Color) => void
+}>()
+
+// track wild selection UI locally
+const wildChoice = ref<number | null>(null)
+
+function handleClick(card: Card, idx: number) {
+  if (!card) return
+  if (!props.isActive) return
+
+  if (card.type === 'WILD' || card.type === 'WILD DRAW') {
+    wildChoice.value = idx
+  } else {
+    props.onPlay(idx)
+  }
+}
+
+function chooseColor(color: Color) {
+  if (wildChoice.value === null) return
+  props.onPlay(wildChoice.value, color)
+  wildChoice.value = null
+}
+</script>
+
+<template>
+  <div
+    class="flex flex-col gap-2 px-10 py-4 rounded-lg transition-all"
+    :class="{
+      'opacity-50': !isActive,
+    }"
+  >
+    <p class="text-center text-3xl font-bold text-white">{{ name }}</p>
+
+    <div class="flex flex-row gap-1 pl-[30px]">
+      <li v-for="(card, idx) in cards" :key="idx" @click="handleClick(card, idx)">
+        <div class="ml-[-20px]">
+          <UnoCard :card="card" />
+        </div>
+      </li>
+    </div>
+
+    <!-- Wild card picker -->
+    <div v-if="wildChoice !== null" class="flex gap-2 mt-2">
+      <button class="w-8 h-8 rounded bg-red-600" @click="chooseColor('RED')" />
+      <button class="w-8 h-8 rounded bg-yellow-400" @click="chooseColor('YELLOW')" />
+      <button class="w-8 h-8 rounded bg-green-600" @click="chooseColor('GREEN')" />
+      <button class="w-8 h-8 rounded bg-blue-600" @click="chooseColor('BLUE')" />
+    </div>
+  </div>
+</template>
