@@ -1,6 +1,6 @@
 import { computed, reactive, type Reactive } from 'vue'
 import { defineStore } from 'pinia'
-import type { IndexedUno } from '@/model/API/game'
+import type { IndexedUno } from '@/graphql/game'
 
 export const useOngoingGamesStore = defineStore('ongoing games', () => {
   const gameList = reactive<IndexedUno[]>([])

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CreateGameForm from '@/components/createGameForm.vue'
+import CreateGameForm from '@/components/CreateGameForm.vue'
 import router from '@/router'
 import { useOngoingGamesStore } from '@/stores/ongoing_games_store'
 import { usePendingGamesStore } from '@/stores/pending_games_store'
@@ -8,8 +8,6 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const playerStore = usePlayerStore()
-playerStore.player = 'Ivan-demo' // TODO: remove this line at the end
-
 if (playerStore.player === undefined) router.push('/login')
 
 const ongoingGamesStore = useOngoingGamesStore()
@@ -24,7 +22,6 @@ const pending_games = computed(() => pendingGamesStore.games.filter((g) => g.pen
 <template>
   <main>
     <h1>Loby Screen</h1>
-    <p>player: {{ playerStore.player }}</p>
 
     <CreateGameForm />
 

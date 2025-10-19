@@ -1,4 +1,4 @@
-import type { IndexedUnoSpecs } from '@/model/API/game'
+import type { IndexedUnoSpecs } from '@/graphql/game'
 import { defineStore } from 'pinia'
 import { computed, reactive, type Reactive } from 'vue'
 

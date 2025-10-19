@@ -2,10 +2,12 @@
 import { useOngoingGamesStore } from './stores/ongoing_games_store'
 import { usePendingGamesStore } from './stores/pending_games_store'
 import { onMounted } from 'vue'
-import * as api from '@/model/API/api'
+import * as api from '@/graphql/api'
+import { usePlayerStore } from './stores/player_store'
 
 const ongoingGamesStore = useOngoingGamesStore()
 const pendingGamesStore = usePendingGamesStore()
+const playerStore = usePlayerStore()
 
 async function initGames() {
   const games = await api.games()
@@ -31,7 +33,8 @@ onMounted(async () => {
 
 <template>
   <main class="w-full h-full">
-    <h1 class="header">UNO</h1>
+    <h1 class="header">UNO!!</h1>
+    <p>Welcome player: {{ playerStore.player }}</p>
     <RouterView />
   </main>
 </template>
