@@ -72,17 +72,7 @@ export class ServerModel {
     }
 
     async play_card(id: string, playerIndex: number, cardIndex: number, namedColor: Color) {
-        const game = await this.store.game(id)
-
-        const withTurnCheck = await game.filter(
-            async (g) => {
-                const round = g.currentRound
-                if (!round) return false
-                const inTurn = round.getPlayerInTurn()
-                return Number.isInteger(inTurn) && inTurn === playerIndex
-            },
-            async (_) => ({ type: "Forbidden" } as const)
-        )
+        const withTurnCheck = await this.ensurePlayerTurn(id, playerIndex)
 
         const afterPlay = await withTurnCheck.map(async (g) => {
             try {
@@ -95,14 +85,63 @@ export class ServerModel {
             return ServerResponse.error(err as ServerError)
         })
 
-        return afterPlay.flatMap(async (g) => this.store.update(g))
+        const saved = await afterPlay.flatMap(async (g) => this.store.update(g))
+
+        return saved.flatMap(async (g) => this.store.game(id))
+    }
+
+    async draw_card(id: string, playerIndex: number) {
+        const withTurnCheck = await this.ensurePlayerTurn(id, playerIndex)
+
+        const afterDraw = await withTurnCheck.map(async (g) => {
+            try {
+                g.currentRound.draw()
+                return g
+            } catch {
+                throw ({ type: "Forbidden" } as const)
+            }
+        }).catch(async (err) => ServerResponse.error(err as ServerError))
+
+        const saved = await afterDraw.flatMap(async (g) => this.store.update(g))
+
+        return saved.flatMap(async (g) => this.store.game(id))
+    }
+
+    async pass_turn(id: string, playerIndex: number) {
+        const withTurnCheck = await this.ensurePlayerTurn(id, playerIndex)
+
+        const afterPass = await withTurnCheck.map(async (g) => {
+            try {
+                g.currentRound.pass()
+                return g
+            } catch {
+                throw ({ type: "Forbidden" } as const)
+            }
+        }).catch(async (err) => ServerResponse.error(err as ServerError))
+
+        const saved = await afterPass.flatMap(async (g) => this.store.update(g))
+
+        return saved.flatMap(async (g) => this.store.game(id))
+    }
+
+    private async ensurePlayerTurn(id: string, playerIndex: number): Promise<ServerResponse<ActiveGame, ServerError>> {
+        const game = await this.store.game(id)
+        return game.filter(
+            async (g) => {
+                const round = g.currentRound
+                console.log(round)
+                if (!round) return false
+                const inTurn = round.getPlayerInTurn()
+                return Number.isInteger(inTurn) && inTurn === playerIndex
+            },
+            async (_) => ({ type: "Forbidden" } as const)
+        )
     }
 
     private startGameIfReady(pending_game: PendingGame): Promise<ServerResponse<ActiveGame | PendingGame, StoreError>> {
         const id = pending_game.id
         if (pending_game.players.length === pending_game.numberOfPlayers) {
             const game = createUnoGame(pending_game.players, 500)
-            game.currentRound = new RoundClass(pending_game.players, 0, standardShuffler)
             this.store.delete_pending(id)
             return this.store.add({ id, pending: false, ...game })
         } else {

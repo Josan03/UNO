@@ -78,7 +78,8 @@ type Mutation {
     create_game(creator: String!, numberOfPlayers: Int!): Game!
     join_game(id: ID!, player: String!): Game!
     play_card(id: ID!, playerIndex: Int!, cardIndex: Int!, namedColor: Color): ActiveGame!
-    draw_card(id: ID!, playerIndex: Int!, autoPlayIfPossible: Boolean = false, namedColorIfWild: Color): ActiveGame!
+    draw_card(id: ID!, playerIndex: Int!): ActiveGame!
+    pass_turn(id: ID!, playerIndex: Int!): ActiveGame!
     say_uno(id: ID!, playerIndex: Int!): ActiveGame!
     call_uno(id: ID!, accuserIndex: Int!, accusedIndex: Int!): ActiveGame!
 }

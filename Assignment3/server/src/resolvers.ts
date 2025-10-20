@@ -84,6 +84,22 @@ async function play_card(api: API, args: { id: string, playerIndex: number, card
     })
 }
 
+async function draw_card(api: API, args: { id: string, playerIndex: number }) {
+    const res = await api.draw_card(args.id, args.playerIndex)
+    return res.resolve({
+        onSuccess: async (g) => toGraphQLGame(g),
+        onError: respond_with_error
+    })
+}
+
+async function pass_turn(api: API, args: { id: string, playerIndex: number }) {
+    const res = await api.pass_turn(args.id, args.playerIndex)
+    return res.resolve({
+        onSuccess: async (g) => toGraphQLGame(g),
+        onError: respond_with_error
+    })
+}
+
 async function pending_games(api: API): Promise<PendingGame[]> {
     const res = await api.pending_games();
     return res.resolve({
@@ -108,16 +124,20 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
         },
         Card: {
             __resolveType(obj: any) {
-                if (obj.number) return "Numbered";
+                if (Object.prototype.hasOwnProperty.call(obj, "number")) return "Numbered";
                 if (!obj.number && obj.color) return "ColoredAction";
                 else return "Wild";
             },
         },
         Round: {
             drawPile: (obj: any) => {
+                if (Array.isArray(obj.drawPile)) return obj.drawPile
+
                 return obj.drawPile.toMemento() ?? [];
             },
             discardPile: (obj: any) => {
+                if (Array.isArray(obj.discardPile)) return obj.discardPile
+
                 return obj.discardPile.toMemento() ?? [];
             },
             playerInTurn: (obj: any) => {
@@ -154,6 +174,12 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
             async play_card(_, args: { id: string, playerIndex: number, cardIndex: number, namedColor?: Color }) {
                 return play_card(api, args)
             },
+            async draw_card(_, args: { id: string, playerIndex: number }) {
+                return draw_card(api, args)
+            },
+            async pass_turn(_, args: { id: string, playerIndex: number }) {
+                return pass_turn(api, args)
+            }
         },
         Subscription: {
             active: {

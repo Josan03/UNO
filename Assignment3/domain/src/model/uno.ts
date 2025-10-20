@@ -81,9 +81,10 @@ export class UnoGame implements Uno {
         opts.roundFromMemento,
         this.shuffler
       );
-      this.currentRound.onEnd(({ winner }) =>
-        this.onRoundEnd(winner, this.currentRound!)
-      );
+      {
+        const r = this.currentRound
+        r.onEnd(({ winner }) => this.onRoundEnd(winner, r))
+      }
     } else if (opts?.startRound !== false) {
       const dealer = Math.floor(this.randomizer(this.players.length));
       this.currentRound = new RoundClass(
@@ -92,9 +93,10 @@ export class UnoGame implements Uno {
         this.shuffler,
         this.cardsPerPlayer
       );
-      this.currentRound.onEnd(({ winner }) =>
-        this.onRoundEnd(winner, this.currentRound!)
-      );
+      {
+        const r = this.currentRound
+        r.onEnd(({ winner }) => this.onRoundEnd(winner, r))
+      }
     }
   }
 

@@ -22,6 +22,8 @@ export type API = {
     games: () => Promise<ServerResponse<ActiveGame[], ServerError>>
     game: (id: string) => Promise<ServerResponse<ActiveGame, ServerError>>
     play_card: (id: string, playerIndex: number, cardIndex: number, namedColor?: Color) => Promise<ServerResponse<ActiveGame, ServerError>>
+    draw_card: (id: string, playerIndex: number) => Promise<ServerResponse<ActiveGame, ServerError>>
+    pass_turn: (id: string, playerIndex: number) => Promise<ServerResponse<ActiveGame, ServerError>>
 }
 
 export const create_api = (
@@ -62,7 +64,19 @@ export const create_api = (
     async function play_card(id: string, playerIndex: number, cardIndex: number, namedColor?: Color) {
         const game = await server.play_card(id, playerIndex, cardIndex, namedColor)
         game.process(broadcast)
-        return game;
+        return game
+    }
+
+    async function draw_card(id: string, playerIndex: number) {
+        const game = await server.draw_card(id, playerIndex)
+        game.process(broadcast)
+        return game
+    }
+
+    async function pass_turn(id: string, playerIndex: number) {
+        const game = await server.pass_turn(id, playerIndex)
+        game.process(broadcast)
+        return game
     }
 
     async function broadcast(game: ActiveGame | PendingGame): Promise<void> {
@@ -77,5 +91,7 @@ export const create_api = (
         games,
         game,
         play_card,
+        draw_card,
+        pass_turn
     }
 }

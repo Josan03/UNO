@@ -21,6 +21,7 @@ export interface Round {
 
   canPlay(playerIndex: number): boolean;
   canPlayAny(): boolean;
+  pass(): void;
   playerHand(playerIndex: number): Card[];
   getDrawPile(): Deck;
   getDiscardPile(): Deck;
@@ -39,13 +40,6 @@ export interface Round {
 type UnoFailureProps = {
   accuser: number;
   accused: number;
-};
-
-type RoundPlayerDetails = {
-  name: string;
-  index: number;
-  cards: Card[];
-  saidUno: boolean;
 };
 
 export type Direction =
@@ -78,6 +72,7 @@ export class RoundClass implements Round {
   public currentDirection: Direction = "clockwise";
   public faceUpTop: Card | undefined;
 
+  private awaitingDecisionFrom: number | null = null;
   private _ended = false;
   private _winner: number | undefined;
   private _endCallbacks: Array<(e: { winner: number }) => void> = [];
@@ -95,6 +90,7 @@ export class RoundClass implements Round {
     this.dealer = dealer;
     this.shuffler = shuffler;
     this.cardsPerPlayer = cardsPerPlayer ?? 7;
+    this.awaitingDecisionFrom = null;
 
     if (players.length > 10 || players.length < 2) {
       throw new Error("Player index out of bounds");
@@ -220,8 +216,20 @@ export class RoundClass implements Round {
     if (this.drawPile.size === 0) this.replenishDrawPile();
 
     if (!this.isAllowedToPlayCard(card, this.currentColor)) {
+      this.awaitingDecisionFrom = null;
       this.nextPlayer(1);
+    } else {
+      this.awaitingDecisionFrom = player;
     }
+  }
+
+  pass(): void {
+    this.ensureNotEnded();
+    if (this.currentPlayerIndex !== this.awaitingDecisionFrom) {
+      throw new Error("Illegal move: cannot pass now");
+    }
+    this.awaitingDecisionFrom = null;
+    this.nextPlayer(1);
   }
 
   play(cardIndex: number, namedColor?: Color): Card {
@@ -257,6 +265,8 @@ export class RoundClass implements Round {
     if (!this.isAllowedToPlayCard(card, effectiveColor)) {
       throw new Error("Illegal move: cannot play this card")
     }
+
+    this.awaitingDecisionFrom = null;
 
     hand.splice(cardIndex, 1)
     this.discardPile.addTop(card)
@@ -464,6 +474,7 @@ export class RoundClass implements Round {
   }
 
   private actionBasedOnFirstCard(firstCard: Card): void {
+    this.awaitingDecisionFrom = null;
     const n = this.playerCount;
     const leftOfDealer = (this.dealer + 1) % n;
     const rightOfDealer = (this.dealer - 1 + n) % n;
@@ -600,15 +611,9 @@ export function createRoundClassFromMemento(memento: any, shuffler: Shuffler<Car
     throw new Error("Invalid memento: currentColor inconsistent with top discard.");
   }
 
-  const playersArray: RoundPlayerDetails[] = players.map((name, index) => ({
-    name,
-    index,
-    cards: (handsRaw[index] ?? []).slice() as Card[],
-    saidUno: false,
-  }));
-  const isFinished = playersArray.some(p => p.cards.length === 0);
-
+  const isFinished = handsRaw.some(h => h.length === 0)
   const playerIndex = memento.playerInTurn;
+
   if (!isFinished) {
     if (playerIndex === undefined || playerIndex === null) {
       throw new Error("Invalid memento: playerInTurn is required when the round is not finished.");
@@ -647,7 +652,8 @@ export function createRoundClassFromMemento(memento: any, shuffler: Shuffler<Car
   (blank as any)._endCallbacks = [];
   (blank as any).uno = { status: "idle" };
   (blank as any).unoSaidAtCount = new Map<number, number>();
-  (blank as any).saidUno = Array.from({ length: players.length }, () => false)
+  (blank as any).saidUno = Array.from({ length: players.length }, () => false);
+  (blank as any).awaitingDecisionFrom = null;
 
   return blank;
 }

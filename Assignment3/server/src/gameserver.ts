@@ -33,9 +33,9 @@ const currentRoundMemento = {
         { type: 'SKIP', color: 'BLUE' },
     ],
     currentColor: 'BLUE',
-    currentDirection: "CLOCKWISE",
+    currentDirection: "clockwise",
     dealer: 1,
-    playerInTurn: 0,
+    currentPlayerIndex: 0,
 }
 
 const activeGames = [
