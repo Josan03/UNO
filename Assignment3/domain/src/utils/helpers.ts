@@ -9,7 +9,7 @@ export function isColoredAction(c: Card): c is ColoredAction {
 }
 
 export function isWild(c: Card): c is Wild {
-  return c.type === "WILD" || c.type === "WILD DRAW";
+  return c.type === "WILD" || c.type === "WILD_DRAW";
 }
 
 export function hasColor(c: Card): c is Numbered | ColoredAction {

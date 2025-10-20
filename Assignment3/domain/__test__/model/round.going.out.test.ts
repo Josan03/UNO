@@ -41,9 +41,9 @@ describe('catching failure to say "UNO!"', () => {
     })
     it("takes the added cards from the draw pile", () => {
       round.play(0)
-      const drawPileSize = round.drawPile().size
+      const drawPileSize = round.getDrawPile().size
       round.catchUnoFailure({ accuser: 1, accused: 0 })
-      expect(round.drawPile().size).toBe(drawPileSize - 4)
+      expect(round.getDrawPile().size).toBe(drawPileSize - 4)
     })
     it("succeeds irrespective of the accuser", () => {
       round.play(0)
@@ -130,12 +130,12 @@ describe('catching failure to say "UNO!"', () => {
     beforeEach(() => { round = createRoundFromMemento(memento) })
     test("adding 4 cards to the hand shuffles the draw pile if necessary", () => {
       round.play(0)
-      expect(round.drawPile().size).toEqual(3)
-      expect(round.discardPile().size).toEqual(4)
+      expect(round.getDrawPile().size).toEqual(3)
+      expect(round.getDiscardPile().size).toEqual(4)
       round.catchUnoFailure({ accuser: 1, accused: 0 })
       expect(round.playerHand(0).length).toBe(5)
-      expect(round.drawPile().size).toEqual(2)
-      expect(round.discardPile().size).toEqual(1)
+      expect(round.getDrawPile().size).toEqual(2)
+      expect(round.getDiscardPile().size).toEqual(1)
     })
   })
 
@@ -319,7 +319,7 @@ describe("score", () => {
     expect(round.score()).toEqual(50)
   })
   it("has the value 50 if the opponent holds a wild draw card", () => {
-    builder.hand(1).is({ type: 'WILD DRAW' })
+    builder.hand(1).is({ type: 'WILD_DRAW' })
     const shuffler = builder.build()
     const round = createRound({ players: ['a', 'b'], dealer: 3, shuffler, cardsPerPlayer: 1 })
     round.play(0)
@@ -327,7 +327,7 @@ describe("score", () => {
   })
   it("adds the cards if the opponent have more than one card", () => {
     builder.hand(0).is({ color: 'BLUE', type: 'DRAW' })
-    builder.hand(1).is({ type: 'WILD DRAW' })
+    builder.hand(1).is({ type: 'WILD_DRAW' })
     builder.drawPile().is({ number: 5 }, { type: 'REVERSE' })
     const shuffler = builder.build()
     const round = createRound({ players: ['a', 'b'], dealer: 3, shuffler, cardsPerPlayer: 1 })
@@ -339,7 +339,7 @@ describe("score", () => {
     const builder = shuffleBuilder({ players: 4, cardsPerPlayer: 1 })
       .discard().is({ type: 'NUMBERED', color: 'BLUE', number: 8 })
       .hand(0).is({ color: 'BLUE', type: 'DRAW' })
-      .hand(1).is({ type: 'WILD DRAW' })
+      .hand(1).is({ type: 'WILD_DRAW' })
       .hand(2).is({ number: 7 })
       .hand(3).is({ number: 3 })
       .drawPile().is({ number: 5 }, { type: 'REVERSE' })
@@ -356,7 +356,7 @@ describe("callback", () => {
     .discard().is({ type: 'NUMBERED', color: 'BLUE', number: 8 })
     .drawPile().is({ number: 8 })
     .hand(0).is({ color: 'GREEN', type: 'DRAW' })
-    .hand(1).is({ type: 'WILD DRAW' })
+    .hand(1).is({ type: 'WILD_DRAW' })
     .hand(2).is({ number: 7 })
     .hand(3).is({ number: 3 })
   const shuffler = builder.build()

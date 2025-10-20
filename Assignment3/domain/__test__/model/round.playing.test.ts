@@ -42,7 +42,7 @@ describe("Playing a card", () => {
     });
     it("places the card on the discard pile", () => {
       const card = round.play(0);
-      expect(round.discardPile().top()).toEqual(card);
+      expect(round.getDiscardPile().top()).toEqual(card);
     });
     it("moves the action to the next hand", () => {
       expect(round.getPlayerInTurn()).toEqual(0);
@@ -161,9 +161,9 @@ describe("Playing a card", () => {
       expect(round.playerHand(1).length).toEqual(9);
     });
     it("takes the 2 cards from the draw pile", () => {
-      const pileSize = round.drawPile().size;
+      const pileSize = round.getDrawPile().size;
       round.play(0);
-      expect(round.drawPile().size).toEqual(pileSize - 2);
+      expect(round.getDrawPile().size).toEqual(pileSize - 2);
     });
   });
 
@@ -205,7 +205,7 @@ describe("Playing a card", () => {
         .discard()
         .is({ type: "NUMBERED", color: "BLUE", number: 6 })
         .hand(0)
-        .is({ type: "WILD DRAW" })
+        .is({ type: "WILD_DRAW" })
         .repeat(6)
         .isnt({ color: "BLUE" });
     });
@@ -237,9 +237,9 @@ describe("Playing a card", () => {
         dealer: 3,
         shuffler,
       });
-      const pileSize = round.drawPile().size;
+      const pileSize = round.getDrawPile().size;
       round.play(0, "RED");
-      expect(round.drawPile().size).toEqual(pileSize - 4);
+      expect(round.getDrawPile().size).toEqual(pileSize - 4);
     });
     it("changes color to the chosen color", () => {
       builder.hand(2).is({ color: "RED" });
@@ -293,7 +293,7 @@ describe("Playing a card", () => {
         .discard()
         .is({ type: "NUMBERED", color: "BLUE" })
         .hand(0)
-        .is({ type: "WILD DRAW" })
+        .is({ type: "WILD_DRAW" })
         .repeat(6)
         .isnt({ color: "BLUE" })
         .build();
@@ -439,7 +439,7 @@ describe("Drawing a card", () => {
       mockShuffler = jest.fn(standardShuffler);
       round = createRoundFromMemento(memento, mockShuffler);
 
-      top = round.discardPile().top();
+      top = round.getDiscardPile().top();
 
       round.draw(); // Drawing an unplayable card and emptying the draw pile
     });
@@ -447,18 +447,18 @@ describe("Drawing a card", () => {
       expect(mockShuffler).toHaveBeenCalledTimes(1);
     });
     it("retains the top card of the discard pile", () => {
-      expect(round.discardPile().top()).toEqual(top);
+      expect(round.getDiscardPile().top()).toEqual(top);
     });
     it("leaves only the top card in the discard pile", () => {
-      expect(round.discardPile().size).toEqual(1);
+      expect(round.getDiscardPile().size).toEqual(1);
     });
     it("adds cards in the draw pile", () => {
-      expect(round.drawPile().size).toEqual(1);
+      expect(round.getDrawPile().size).toEqual(1);
     });
     it("leaves the cards removed from the discard pile in the draw pile", () => {
       expect(
         is({ type: "NUMBERED", color: "BLUE", number: 8 })(
-          round.drawPile().peek()
+          round.getDrawPile().peek()
         )
       ).toBeTruthy();
     });
@@ -492,8 +492,8 @@ describe("Drawing a card", () => {
       round.play(1);
 
       expect(round.playerHand(2).length).toEqual(3);
-      expect(round.discardPile().size).toEqual(1);
-      expect(round.drawPile().size).toEqual(1);
+      expect(round.getDiscardPile().size).toEqual(1);
+      expect(round.getDrawPile().size).toEqual(1);
     });
   });
 });

@@ -44,8 +44,8 @@ function decideMove({
   if (playableIndex !== -1) {
     const card = botHand[playableIndex]
 
-    // 🧠 Only name a color for WILD or WILD DRAW
-    if (card.type === 'WILD' || card.type === 'WILD DRAW') {
+    // 🧠 Only name a color for WILD or WILD_DRAW
+    if (card.type === 'WILD' || card.type === 'WILD_DRAW') {
       const colors: Color[] = ['RED', 'YELLOW', 'GREEN', 'BLUE']
       const chosenColor = colors[Math.floor(Math.random() * colors.length)]
       return { type: 'play', cardIndex: playableIndex, color: chosenColor }

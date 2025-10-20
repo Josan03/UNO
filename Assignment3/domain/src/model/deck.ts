@@ -15,7 +15,7 @@ export const types: Readonly<Type[]> = [
   "REVERSE",
   "DRAW",
   "WILD",
-  "WILD DRAW",
+  "WILD_DRAW",
 ] as const;
 
 export interface Deck {
@@ -150,7 +150,7 @@ export function buildStandardDeck(): Card[] {
 
   for (let i = 0; i < 4; i++) {
     cards.push({ type: "WILD" });
-    cards.push({ type: "WILD DRAW" });
+    cards.push({ type: "WILD_DRAW" });
   }
 
   return cards;

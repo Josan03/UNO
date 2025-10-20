@@ -14,7 +14,7 @@ const currentRoundMemento = {
     ],
   ],
   drawPile: [
-    { type: 'WILD DRAW' }
+    { type: 'WILD_DRAW' }
   ],
   discardPile: [
     { type: 'NUMBERED', color: 'BLUE', number: 7 },

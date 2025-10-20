@@ -1,7 +1,8 @@
 import { Color } from "../../domain/src/model/card";
 import { createUnoGame, Uno, UnoSpecs } from "../../domain/src/model/uno";
-import { Randomizer } from "../../domain/src/utils/random_utils";
+import { Randomizer, standardShuffler } from "../../domain/src/utils/random_utils";
 import { ServerResponse } from "./response";
+import { RoundClass } from "../../domain/src/model/round";
 
 export interface ActiveGame extends Uno {
     id: string;
@@ -101,6 +102,7 @@ export class ServerModel {
         const id = pending_game.id
         if (pending_game.players.length === pending_game.numberOfPlayers) {
             const game = createUnoGame(pending_game.players, 500)
+            game.currentRound = new RoundClass(pending_game.players, 0, standardShuffler)
             this.store.delete_pending(id)
             return this.store.add({ id, pending: false, ...game })
         } else {

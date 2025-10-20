@@ -6,7 +6,7 @@ export type Type =
   | "REVERSE"
   | "DRAW"
   | "WILD"
-  | "WILD DRAW";
+  | "WILD_DRAW";
 
 export type Numbered = {
   readonly type: "NUMBERED";
@@ -19,6 +19,6 @@ export type ColoredAction =
   | { readonly type: "REVERSE"; readonly color: Color }
   | { readonly type: "DRAW"; readonly color: Color };
 
-export type Wild = { readonly type: "WILD" } | { readonly type: "WILD DRAW" };
+export type Wild = { readonly type: "WILD" } | { readonly type: "WILD_DRAW" };
 
 export type Card = Numbered | ColoredAction | Wild;

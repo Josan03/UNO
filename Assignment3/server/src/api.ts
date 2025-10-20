@@ -61,7 +61,6 @@ export const create_api = (
 
     async function play_card(id: string, playerIndex: number, cardIndex: number, namedColor?: Color) {
         const game = await server.play_card(id, playerIndex, cardIndex, namedColor)
-        console.log(game)
         game.process(broadcast)
         return game;
     }

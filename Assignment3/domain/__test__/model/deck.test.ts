@@ -76,7 +76,7 @@ describe("Initial deck", () => {
     expect(initialDeck.filter(is({ type: "WILD" })).size).toEqual(4);
   });
   it("contains 4 wild draw cards", () => {
-    expect(initialDeck.filter(is({ type: "WILD DRAW" })).size).toEqual(4);
+    expect(initialDeck.filter(is({ type: "WILD_DRAW" })).size).toEqual(4);
   });
   // Blank cards skipped, since they have no gameplay
   it("contains 108 cards", () => {
@@ -131,7 +131,7 @@ describe("fromMemento", () => {
         { type: "REVERSE", color: "GREEN" },
         { type: "DRAW", color: "YELLOW" },
         { type: "WILD" },
-        { type: "WILD DRAW" },
+        { type: "WILD_DRAW" },
       ];
       const created: deck.Deck = createDeckFromMemento(cards);
       let card = created.deal()!;
@@ -155,7 +155,7 @@ describe("fromMemento", () => {
       expect(card.type).toEqual("WILD");
 
       card = created.deal()!;
-      expect(card.type).toEqual("WILD DRAW");
+      expect(card.type).toEqual("WILD_DRAW");
 
       expect(created.deal()).toBeUndefined();
     });
@@ -200,7 +200,7 @@ describe("toMemento", () => {
       { type: "REVERSE", color: "GREEN" },
       { type: "DRAW", color: "YELLOW" },
       { type: "WILD" },
-      { type: "WILD DRAW" },
+      { type: "WILD_DRAW" },
     ];
     const created = createDeckFromMemento(cards);
     expect(created.toMemento()).toEqual(cards);

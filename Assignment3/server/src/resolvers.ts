@@ -102,6 +102,34 @@ async function pending_game(api: API, args: any): Promise<PendingGame> {
 
 export const create_resolvers = (pubsub: PubSub, api: API) => {
     return {
+        Direction: {
+            CLOCKWISE: "clockwise",
+            COUNTERCLOCKWISE: "counterclockwise"
+        },
+        Card: {
+            __resolveType(obj: any) {
+                if (obj.number) return "Numbered";
+                if (!obj.number && obj.color) return "ColoredAction";
+                else return "Wild";
+            },
+        },
+        Round: {
+            drawPile: (obj: any) => {
+                return obj.drawPile.toMemento() ?? [];
+            },
+            discardPile: (obj: any) => {
+                return obj.discardPile.toMemento() ?? [];
+            },
+            playerInTurn: (obj: any) => {
+                return obj.currentPlayerIndex;
+            }
+        },
+        Game: {
+            __resolveType(obj: any) {
+                if (obj.pending) return "PendingGame";
+                else return "ActiveGame";
+            },
+        },
         Query: {
             async games() {
                 return games(api);
@@ -114,19 +142,6 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
             },
             async pending_game(_, args) {
                 return pending_game(api, args);
-            },
-        },
-        Game: {
-            __resolveType(obj: any) {
-                if (obj.pending) return "PendingGame";
-                else return "ActiveGame";
-            },
-        },
-        Card: {
-            __resolveType(obj: any) {
-                if (obj.number) return "Numbered";
-                if (!obj.number && obj.color) return "ColoredAction";
-                else return "Wild";
             },
         },
         Mutation: {

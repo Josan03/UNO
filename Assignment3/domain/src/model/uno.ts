@@ -223,8 +223,7 @@ export function createUnoGameFromMemento(
     if (m.currentRound) {
       roundFromMemento = m.currentRound;
     } else {
-      // No round in progress, so start a new one
-      startRound = true;
+      throw new Error("Invalid memento: current round missing")
     }
   }
 

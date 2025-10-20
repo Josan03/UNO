@@ -3,12 +3,18 @@ import { Shuffler } from "../utils/random_utils";
 import { Card, Color } from "./card";
 import { ArrayDeck, buildStandardDeck, createFromMemento, Deck } from "./deck";
 
-export type Round = {
-  player(playerIndex: number): string;
+export interface Round {
+  players: string[];
+  hands: Card[][];
+  drawPile: Deck;
+  discardPile: Deck;
+  currentColor: Color | undefined;
+  currentDirection: Direction;
+  dealer: number;
   playerCount: number;
   currentPlayerIndex: number;
-  dealer: number;
 
+  player(playerIndex: number): string;
   getPlayerInTurn(): number | undefined;
   draw(): void;
   play(playerIndex: number, namedColor?: Color): Card;
@@ -16,8 +22,8 @@ export type Round = {
   canPlay(playerIndex: number): boolean;
   canPlayAny(): boolean;
   playerHand(playerIndex: number): Card[];
-  drawPile(): Deck;
-  discardPile(): Deck;
+  getDrawPile(): Deck;
+  getDiscardPile(): Deck;
 
   sayUno(playerIndex: number): void;
   catchUnoFailure(data: UnoFailureProps): boolean;
@@ -42,6 +48,10 @@ type RoundPlayerDetails = {
   saidUno: boolean;
 };
 
+export type Direction =
+  | "clockwise"
+  | "counterclockwise"
+
 type UnoState =
   | { status: "idle" }
   | {
@@ -59,11 +69,13 @@ export class RoundClass implements Round {
   public cardsPerPlayer: number;
   public playerCount: number;
   public currentPlayerIndex: number;
-  public playersArray: Array<RoundPlayerDetails>;
-  public _drawPile: Deck;
-  public _discardPile: Deck;
+  public hands: Card[][];
+  public saidUno: boolean[];
+
+  public drawPile: Deck;
+  public discardPile: Deck;
   public currentColor: Color | undefined;
-  public currentDirection: 'clockwise' | 'counter-clockwise' = 'clockwise';
+  public currentDirection: Direction = "clockwise";
   public faceUpTop: Card | undefined;
 
   private _ended = false;
@@ -84,38 +96,34 @@ export class RoundClass implements Round {
     this.shuffler = shuffler;
     this.cardsPerPlayer = cardsPerPlayer ?? 7;
 
+    if (players.length > 10 || players.length < 2) {
+      throw new Error("Player index out of bounds");
+    }
+
+    this.playerCount = players.length
+    this.hands = Array.from({ length: this.playerCount }, () => []);
+    this.saidUno = Array.from({ length: this.playerCount }, () => false);
+
     const fullUnoDeckCards = buildStandardDeck();
     if (shuffler) {
       shuffler(fullUnoDeckCards);
     }
-    this._drawPile = new ArrayDeck(fullUnoDeckCards);
+    this.drawPile = new ArrayDeck(fullUnoDeckCards);
 
-    this.playersArray = [];
-    if (players.length > 10 || players.length < 2) {
-      throw new Error("Player index out of bounds");
-    } else {
-      players.map((item, itemIndex) => {
-        const playerCards = this._drawPile.draw(this.cardsPerPlayer);
+    for (let i = 0; i < this.playerCount; i++) {
+      const drawn = this.drawPile.draw(this.cardsPerPlayer) ?? [];
 
-        const roundPlayerDetails: RoundPlayerDetails = {
-          name: item,
-          index: itemIndex,
-          cards: playerCards ? playerCards : [],
-          saidUno: false,
-        };
-        this.playersArray.push(roundPlayerDetails);
-      });
+      this.hands[i].push(...drawn)
     }
-    this.playerCount = this.playersArray.length;
-    this.currentPlayerIndex =
-      dealer < this.playersArray.length - 1 ? dealer + 1 : 0;
 
-    let firstCard = this._drawPile.draw(1)?.[0];
-    while (firstCard?.type == "WILD" || firstCard?.type == "WILD DRAW") {
-      if (shuffler) this._drawPile.shuffle(shuffler);
-      firstCard = this._drawPile.draw(1)?.[0];
+    this.currentPlayerIndex = dealer < this.playerCount - 1 ? dealer + 1 : 0;
+
+    let firstCard = this.drawPile.draw(1)?.[0];
+    while (firstCard?.type == "WILD" || firstCard?.type == "WILD_DRAW") {
+      if (shuffler) this.drawPile.shuffle(shuffler);
+      firstCard = this.drawPile.draw(1)?.[0];
     }
-    this._discardPile = firstCard
+    this.discardPile = firstCard
       ? new ArrayDeck([firstCard])
       : new ArrayDeck([]);
 
@@ -129,19 +137,19 @@ export class RoundClass implements Round {
   player(playerIndex: number) {
     if (playerIndex < 0 || playerIndex >= this.playerCount)
       throw new Error("Player index out of bounds")
-    return this.playersArray[playerIndex].name
+    return this.players[playerIndex]
   }
 
-  drawPile(): Deck {
-    return this._drawPile
+  getDrawPile(): Deck {
+    return this.drawPile
   }
 
-  discardPile(): Deck {
-    return this._discardPile
+  getDiscardPile(): Deck {
+    return this.discardPile
   }
 
   playerHand(player: number) {
-    return this.playersArray[player].cards
+    return this.hands[player]
   }
 
   getPlayerInTurn(): number | undefined {
@@ -159,9 +167,9 @@ export class RoundClass implements Round {
   score(): number | undefined {
     if (!this._ended || this._winner === undefined) return undefined
     let sum = 0
-    for (const p of this.playersArray) {
-      if (p.index === this._winner) continue
-      for (const c of p.cards) sum += this.cardScore(c)
+    for (let p = 0; p < this.playerCount; p++) {
+      if (p === this._winner) continue
+      for (const c of this.hands[p]) sum += this.cardScore(c)
     }
     return sum
   }
@@ -174,7 +182,7 @@ export class RoundClass implements Round {
     this.ensureNotEnded();
     this.ensurePlayerIndex(player);
 
-    const handSize = this.playersArray[player].cards.length;
+    const handSize = this.hands[player].length;
     const isPlayersTurn = this.currentPlayerIndex === player;
     const isPendingAccused =
       this.uno.status === "pending" && this.uno.accused === player && !this.uno.applied;
@@ -183,7 +191,7 @@ export class RoundClass implements Round {
 
     if (handSize === 2 || handSize === 1) {
       this.unoSaidAtCount.set(player, handSize);
-      this.playersArray[player].saidUno = true;
+      this.saidUno[player] = true;
 
       if (isPendingAccused) {
         this.uno.satisfied = true;
@@ -197,19 +205,19 @@ export class RoundClass implements Round {
 
     const player = this.currentPlayerIndex;
 
-    if (this._drawPile.size === 0) this.replenishDrawPile();
-    const taken = this._drawPile.draw(1);
+    if (this.drawPile.size === 0) this.replenishDrawPile();
+    const taken = this.drawPile.draw(1);
     if (!taken || taken.length === 0) {
       throw new Error("No cards left to draw");
     }
 
     const card = taken[0];
-    this.playersArray[player].cards.push(card);
+    this.hands[player].push(card);
 
     this.unoSaidAtCount.delete(player);
-    this.playersArray[player].saidUno = false;
+    this.saidUno[player] = false;
 
-    if (this._drawPile.size === 0) this.replenishDrawPile();
+    if (this.drawPile.size === 0) this.replenishDrawPile();
 
     if (!this.isAllowedToPlayCard(card, this.currentColor)) {
       this.nextPlayer(1);
@@ -221,7 +229,7 @@ export class RoundClass implements Round {
     this.closeUnoIfWindowExpiredBeforeActorActs()
 
     const actor = this.currentPlayerIndex;
-    const hand = this.playersArray[actor].cards
+    const hand = this.hands[actor]
 
     if (hand.length === 0) throw new Error("Illegal move: hand is empty")
     if (cardIndex < 0 || cardIndex >= hand.length)
@@ -229,18 +237,18 @@ export class RoundClass implements Round {
 
     const card = hand[cardIndex]
 
-    if (namedColor && card.type !== "WILD" && card.type !== "WILD DRAW") {
+    if (namedColor && card.type !== "WILD" && card.type !== "WILD_DRAW") {
       throw new Error("Illegal move: cannot name a color on a colored card");
     }
 
-    if ((card.type === "WILD" || card.type === "WILD DRAW") && !namedColor) {
+    if ((card.type === "WILD" || card.type === "WILD_DRAW") && !namedColor) {
       throw new Error("Illegal move: wild must choose a color")
     }
 
     const effectiveColor: Color | undefined =
-      card.type === "WILD" || card.type === "WILD DRAW" ? namedColor : this.currentColor
+      card.type === "WILD" || card.type === "WILD_DRAW" ? namedColor : this.currentColor
 
-    if (card.type === "WILD DRAW") {
+    if (card.type === "WILD_DRAW") {
       if (this.hasAnyCardOfColor(actor, this.currentColor)) {
         throw new Error("Illegal move: cannot play this card")
       }
@@ -251,13 +259,13 @@ export class RoundClass implements Round {
     }
 
     hand.splice(cardIndex, 1)
-    this._discardPile.addTop(card)
+    this.discardPile.addTop(card)
     this.faceUpTop = card;
 
-    if (this.playersArray[actor].cards.length === 1) {
+    if (this.hands[actor].length === 1) {
       const saidAt = this.unoSaidAtCount.get(actor);
       const satisfiedNow =
-        saidAt === 2 || this.playersArray[actor].saidUno === true;
+        saidAt === 2 || this.saidUno[actor] === true;
 
       this.uno = {
         status: "pending",
@@ -268,18 +276,18 @@ export class RoundClass implements Round {
       };
 
       this.unoSaidAtCount.delete(actor);
-      this.playersArray[actor].saidUno = false;
+      this.saidUno[actor] = false;
     } else {
       if (this.uno.status === "pending" && this.uno.accused === actor) {
         this.uno = { status: "idle" };
       }
       this.unoSaidAtCount.delete(actor);
-      this.playersArray[actor].saidUno = false;
+      this.saidUno[actor] = false;
     }
 
     this.applyCardEffectsInPlay(card, namedColor)
 
-    if (this.playersArray[actor].cards.length === 0) {
+    if (this.hands[actor].length === 0) {
       this.endRound(actor);
     }
 
@@ -289,31 +297,31 @@ export class RoundClass implements Round {
   canPlay(cardIndex: number): boolean {
     if (this._ended) return false;
 
-    const hand = this.playersArray[this.currentPlayerIndex].cards;
+    const hand = this.hands[this.currentPlayerIndex];
     if (!Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex >= hand.length) {
       return false;
     }
 
     const card = hand[cardIndex];
 
-    if (card.type === "WILD DRAW") {
+    if (card.type === "WILD_DRAW") {
       if (this.hasAnyCardOfColor(this.currentPlayerIndex, this.currentColor)) {
         return false;
       }
     }
 
     const color =
-      card.type === "WILD" || card.type === "WILD DRAW" ? undefined : this.currentColor;
+      card.type === "WILD" || card.type === "WILD_DRAW" ? undefined : this.currentColor;
 
     return this.isAllowedToPlayCard(card, color);
   }
 
   canPlayAny(): boolean {
     if (this._ended) return false
-    const hand = this.playersArray[this.currentPlayerIndex].cards
+    const hand = this.hands[this.currentPlayerIndex]
     return hand.some((card) => {
       const color =
-        card.type === "WILD" || card.type === "WILD DRAW" ? undefined : this.currentColor
+        card.type === "WILD" || card.type === "WILD_DRAW" ? undefined : this.currentColor
       return this.isAllowedToPlayCard(card, color)
     });
   }
@@ -324,16 +332,16 @@ export class RoundClass implements Round {
     this.ensurePlayerIndex(data.accuser);
 
     const accusedIndex = data.accused
-    const accused = this.playersArray[accusedIndex]
+    const accused = this.hands[accusedIndex]
 
-    if (accused.cards.length !== 1) return false;
+    if (accused.length !== 1) return false;
 
     const previousPlayer = this.peekNextIndex(-1)
 
     if (accusedIndex !== previousPlayer) return false
 
     const saidAt = this.unoSaidAtCount.get(accusedIndex)
-    if (accused.saidUno || saidAt === 1 || saidAt === 2) return false;
+    if (this.saidUno[accusedIndex] || saidAt === 1 || saidAt === 2) return false;
 
     if (this.uno.status === "pending") {
       if (this.uno.applied) return false;
@@ -351,10 +359,10 @@ export class RoundClass implements Round {
 
   toMemento(): any {
     return {
-      players: this.playersArray.map(p => p.name),
-      hands: this.playersArray.map(p => [...p.cards]),
-      drawPile: this._drawPile.toMemento(),
-      discardPile: this._discardPile.toMemento(),
+      players: this.players.slice(),
+      hands: this.hands.map(p => [...p]),
+      drawPile: this.drawPile.toMemento(),
+      discardPile: this.discardPile.toMemento(),
       currentColor: this.currentColor,
       currentDirection: this.currentDirection,
       dealer: this.dealer,
@@ -365,7 +373,7 @@ export class RoundClass implements Round {
   private flipDirection(): void {
     this.currentDirection =
       this.currentDirection === "clockwise"
-        ? "counter-clockwise"
+        ? "counterclockwise"
         : "clockwise";
   }
 
@@ -374,14 +382,14 @@ export class RoundClass implements Round {
       throw new Error("Cannot replenish draw pile: no face-up discard")
     }
 
-    const all = this._discardPile.toMemento() as Card[];
+    const all = this.discardPile.toMemento() as Card[];
 
     const rest = all.slice(1);
 
-    this._discardPile = new ArrayDeck([this.faceUpTop]);
+    this.discardPile = new ArrayDeck([this.faceUpTop]);
 
-    this._drawPile = new ArrayDeck(rest);
-    if (this.shuffler) this._drawPile.shuffle(this.shuffler);
+    this.drawPile = new ArrayDeck(rest);
+    if (this.shuffler) this.drawPile.shuffle(this.shuffler);
   }
 
   private cardsEqual(a: Card, b: Card): boolean {
@@ -395,13 +403,13 @@ export class RoundClass implements Round {
       case "SKIP":
       case "REVERSE":
       case "WILD":
-      case "WILD DRAW":
+      case "WILD_DRAW":
         return true;
     }
   }
 
   private applyCardEffectsInPlay(card: Card, namedColor?: Color): void {
-    if (card.type === "WILD" || card.type === "WILD DRAW") {
+    if (card.type === "WILD" || card.type === "WILD_DRAW") {
       this.currentColor = namedColor
     } else {
       this.currentColor = (card as any).color
@@ -428,7 +436,7 @@ export class RoundClass implements Round {
       case "WILD":
         this.nextPlayer(1)
         break
-      case "WILD DRAW": {
+      case "WILD_DRAW": {
         const next = this.peekNextIndex(1)
         this.drawNToPlayer(next, 4)
         this.nextPlayer(2)
@@ -442,11 +450,11 @@ export class RoundClass implements Round {
   }
 
   private isFinished(): boolean {
-    return this.playersArray.some(p => p.cards.length === 0);
+    return this.hands.some(p => p.length === 0);
   }
 
   private peekNextIndex(steps: number = 1): number {
-    const n = this.playersArray.length;
+    const n = this.playerCount;
     const delta = this.currentDirection === "clockwise" ? steps : -steps;
     return (((this.currentPlayerIndex + delta) % n) + n) % n;
   }
@@ -483,20 +491,20 @@ export class RoundClass implements Round {
   }
 
   private isAllowedToPlayCard(card: Card, color?: Color): boolean {
-    const top = this._discardPile.peek();
+    const top = this.discardPile.peek();
     return canPlayOn(card, top, color);
   }
 
   private drawNToPlayer(targetIndex: number, count: number): void {
     for (let i = 0; i < count; i++) {
-      if (this._drawPile.size === 0) {
+      if (this.drawPile.size === 0) {
         this.replenishDrawPile();
       }
-      const card = this._drawPile.deal();
+      const card = this.drawPile.deal();
       if (!card) {
         throw new Error("No cards left to draw");
       }
-      this.playersArray[targetIndex].cards.push(card);
+      this.hands[targetIndex].push(card);
     }
   }
 
@@ -514,7 +522,7 @@ export class RoundClass implements Round {
       case "REVERSE":
       case "SKIP": return 20
       case "WILD":
-      case "WILD DRAW": return 50
+      case "WILD_DRAW": return 50
     }
   }
 
@@ -537,7 +545,7 @@ export class RoundClass implements Round {
 
   private hasAnyCardOfColor(playerIndex: number, color?: Color): boolean {
     if (!color) return false;
-    return this.playersArray[playerIndex].cards.some(c => 'color' in c && (c).color === color)
+    return this.hands[playerIndex].some(c => 'color' in c && (c).color === color)
   }
 }
 
@@ -547,7 +555,7 @@ export function createRoundClassFromMemento(memento: any, shuffler: Shuffler<Car
   const drawPileRaw = memento.drawPile ?? [];
   const discardPileRaw = memento.discardPile ?? [];
   const dealer: number = memento.dealer ?? 0;
-  const currentDirection: 'clockwise' | 'counter-clockwise' = memento.currentDirection ?? 'clockwise';
+  const currentDirection: Direction = memento.currentDirection ?? 'clockwise';
   const currentColorMaybe = memento.currentColor;
 
   if (players.length < 2) {
@@ -622,10 +630,10 @@ export function createRoundClassFromMemento(memento: any, shuffler: Shuffler<Car
   blank.dealer = dealer;
   blank.shuffler = shuffler;
   blank.cardsPerPlayer = 0;
-  blank.playersArray = playersArray;
-  blank.playerCount = playersArray.length;
-  blank._drawPile = drawPile;
-  blank._discardPile = discardPile;
+  blank.playerCount = players.length;
+  blank.hands = handsRaw.map((h) => h.slice())
+  blank.drawPile = drawPile;
+  blank.discardPile = discardPile;
   blank.faceUpTop = discardPile.peek() as Card | undefined;
   blank.currentColor =
     (currentColorMaybe as Color | undefined) ?? (topColor as Color | undefined);
@@ -634,11 +642,12 @@ export function createRoundClassFromMemento(memento: any, shuffler: Shuffler<Car
 
   (blank as any)._ended = isFinished;
   (blank as any)._winner = isFinished
-    ? playersArray.find((p) => p.cards.length === 0)?.index
+    ? blank.hands.findIndex((h) => h.length === 0)
     : undefined;
   (blank as any)._endCallbacks = [];
   (blank as any).uno = { status: "idle" };
   (blank as any).unoSaidAtCount = new Map<number, number>();
+  (blank as any).saidUno = Array.from({ length: players.length }, () => false)
 
   return blank;
 }

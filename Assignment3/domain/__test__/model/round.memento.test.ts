@@ -18,7 +18,7 @@ const memento = {
     ],
   ],
   drawPile: [
-    { type: 'WILD DRAW' }
+    { type: 'WILD_DRAW' }
   ],
   discardPile: [
     { type: 'NUMBERED', color: 'BLUE', number: 7 },
@@ -51,12 +51,12 @@ describe("create round from valid memento", () => {
     expect(is({ type: 'SKIP', color: 'RED' })(round.playerHand(2).at(0))).toBeTruthy()
   })
   it("reads the draw pile from the memento", () => {
-    expect(is({ type: 'WILD DRAW' })(round.drawPile().deal())).toBeTruthy()
-    expect(round.drawPile().size).toEqual(0)
+    expect(is({ type: 'WILD_DRAW' })(round.getDrawPile().deal())).toBeTruthy()
+    expect(round.getDrawPile().size).toEqual(0)
   })
   it("reads the discard pile from the memento", () => {
-    expect(is({ type: 'NUMBERED', color: 'BLUE', number: 7 })(round.discardPile().top())).toBeTruthy()
-    expect(round.discardPile().size).toEqual(2)
+    expect(is({ type: 'NUMBERED', color: 'BLUE', number: 7 })(round.getDiscardPile().top())).toBeTruthy()
+    expect(round.getDiscardPile().size).toEqual(2)
   })
   it("deduces the player count from the number of hands", () => {
     expect(round.playerCount).toEqual(3)
@@ -91,7 +91,7 @@ describe("create round from valid memento", () => {
           ],
         ],
         drawPile: [
-          { type: 'WILD DRAW' }
+          { type: 'WILD_DRAW' }
         ],
         discardPile: [
           { type: 'NUMBERED', color: 'BLUE', number: 7 },
