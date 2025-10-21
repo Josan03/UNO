@@ -32,11 +32,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="w-full h-full">
-    <div class="w-full h-dvh from-blue-900 to-blue-900 via-blue-300 bg-gradient-to-b">
-      <h1 class="header">UNO!!</h1>
-      <p>Welcome player: {{ playerStore.player }}</p>
-      <RouterView />
-    </div>
+  <main
+    class="w-full h-full min-h-dvh max-h-dvh bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900"
+  >
+    <RouterView />
   </main>
 </template>

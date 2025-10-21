@@ -22,17 +22,17 @@ defineProps<{
     v-else-if="card"
     class="relative w-24 h-36 rounded-xl border-[6px] border-white shadow-lg overflow-hidden flex items-center justify-center text-white font-bold select-none"
     :class="{
-      'bg-red-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'RED',
-      'bg-green-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'GREEN',
-      'bg-blue-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'BLUE',
-      'bg-yellow-400': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'YELLOW',
-      'bg-black': card.type === 'WILD' || card.type === 'WILD DRAW',
+      'bg-red-600': card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'RED',
+      'bg-green-600': card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'GREEN',
+      'bg-blue-600': card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'BLUE',
+      'bg-yellow-400': card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'YELLOW',
+      'bg-black': card.type === 'WILD' || card.type === 'WILD_DRAW',
     }"
   >
     <!-- inner oval -->
     <!-- inner oval -->
     <div
-      v-if="card.type !== 'WILD' && card.type !== 'WILD DRAW'"
+      v-if="card.type !== 'WILD' && card.type !== 'WILD_DRAW'"
       class="absolute inset-0 bg-white rounded-full scale-90 -skew-x-[20deg] z-0"
     ></div>
 
@@ -71,9 +71,9 @@ defineProps<{
     </template>
 
     <template v-else>
-      <span v-if="card.type == 'WILD DRAW'" class="absolute top-1 left-2 text-lg z-10">+4</span>
+      <span v-if="card.type == 'WILD_DRAW'" class="absolute top-1 left-2 text-lg z-10">+4</span>
       <span
-        v-if="card.type == 'WILD DRAW'"
+        v-if="card.type == 'WILD_DRAW'"
         class="absolute bottom-1 right-2 text-lg rotate-180 z-10"
         >+4</span
       >
@@ -82,14 +82,14 @@ defineProps<{
       <span
         class="relative z-10 text-5xl"
         :class="{
-          'text-red-600': card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'RED',
+          'text-red-600': card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'RED',
           'text-green-600':
-            card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'GREEN',
+            card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'GREEN',
           'text-blue-600':
-            card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'BLUE',
+            card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'BLUE',
           'text-yellow-600':
-            card.type !== 'WILD' && card.type !== 'WILD DRAW' && card.color === 'YELLOW',
-          'text-white': card.type === 'WILD' || card.type === 'WILD DRAW',
+            card.type !== 'WILD' && card.type !== 'WILD_DRAW' && card.color === 'YELLOW',
+          'text-white': card.type === 'WILD' || card.type === 'WILD_DRAW',
         }"
       >
         <span v-if="card.type === 'SKIP'">⦸</span>

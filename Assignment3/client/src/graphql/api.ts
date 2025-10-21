@@ -11,6 +11,7 @@ import { getMainDefinition } from '@apollo/client/utilities'
 import { createClient } from 'graphql-ws'
 import { from_graphql_game, type IndexedUno, type IndexedUnoSpecs } from './game'
 import { PENDING_GAMES_QUERY, PENDING_GAME_BY_ID_QUERY, JOIN_GAME_MUTATION } from './graphql-schema'
+import type { Color } from '../../../domain/src/model/card'
 
 const wsLink = new GraphQLWsLink(
   createClient({
@@ -158,10 +159,59 @@ export async function games(): Promise<IndexedUno[]> {
       games {
         id
         pending
+        cardsPerPlayer
         players
         targetScore
         scores
-        cardsPerPlayer
+        currentRound {
+          players
+          hands {
+            ... on Numbered {
+              type
+              color
+              number
+            }
+            ... on ColoredAction {
+              type
+              color
+            }
+            ... on Wild {
+              type
+            }
+          }
+          drawPile {
+            ... on Numbered {
+              type
+              color
+              number
+            }
+            ... on ColoredAction {
+              type
+              color
+            }
+            ... on Wild {
+              type
+            }
+          }
+          discardPile {
+            ... on Numbered {
+              type
+              color
+              number
+            }
+            ... on ColoredAction {
+              type
+              color
+            }
+            ... on Wild {
+              type
+            }
+          }
+          currentColor
+          currentDirection
+          dealer
+          playerInTurn
+        }
       }
     }
   `)
@@ -278,36 +328,16 @@ export async function call_uno(
 }
 
 // This function is not tested
-export async function draw_card(
-  drawCardId: number,
-  playerIndex: number,
-  autoPlayIfPossible: boolean,
-  namedColorIfWild: string,
-): Promise<IndexedUno> {
+export async function draw_card(drawCardId: number, playerIndex: number): Promise<IndexedUno> {
   const response = await mutate(
     gql`
-      mutation Draw_card(
-        $drawCardId: ID!
-        $playerIndex: Int!
-        $autoPlayIfPossible: Boolean
-        $namedColorIfWild: Color
-      ) {
-        draw_card(
-          id: $drawCardId
-          playerIndex: $playerIndex
-          autoPlayIfPossible: $autoPlayIfPossible
-          namedColorIfWild: $namedColorIfWild
-        ) {
+      mutation Draw_card($drawCardId: ID!, $playerIndex: Int!) {
+        draw_card(id: $drawCardId, playerIndex: $playerIndex) {
           id
-          pending
-          cardsPerPlayer
-          players
-          targetScore
-          scores
         }
       }
     `,
-    { drawCardId, playerIndex, autoPlayIfPossible, namedColorIfWild },
+    { drawCardId, playerIndex },
   )
   const updatedGame = response.draw_card
   return from_graphql_game(updatedGame)
@@ -361,7 +391,7 @@ export type PlayCardApiProps = {
   playCardId: number
   playerIndex: number
   cardIndex: number
-  namedColor: string
+  namedColor?: Color
 }
 
 export async function play_card({
@@ -370,6 +400,11 @@ export async function play_card({
   cardIndex,
   namedColor,
 }: PlayCardApiProps): Promise<IndexedUno> {
+  console.log(
+    'Api was called with this props: \n' +
+      `${playCardId} - ${playerIndex} - ${cardIndex} - ${namedColor}`,
+  )
+  
   const response = await mutate(
     gql`
       mutation Play_card(

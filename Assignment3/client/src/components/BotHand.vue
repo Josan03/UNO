@@ -3,10 +3,9 @@ import UnoCard from '@/components/UnoCard.vue'
 import type { Card } from '../../../domain/src/model/card'
 
 defineProps<{
-  name: string
-  index: number
+  name: string | undefined
   isActive: boolean
-  cards: Card[]
+  cards: Card[] | undefined
   orientation?: 'horizontal' | 'vertical' // flex row vs column
 }>()
 </script>
@@ -25,7 +24,7 @@ defineProps<{
       <div
         v-for="(_, idx) in cards"
         :key="idx"
-        :class="[orientation === 'horizontal' ? '' : 'mb-[-110px]']"
+        :class="[orientation === 'horizontal' ? 'ml-[-40px]' : 'mb-[-110px]']"
       >
         <UnoCard back />
       </div>
