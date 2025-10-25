@@ -23,6 +23,6 @@ export function createRound({
   return round.createRound(players, dealer, shuffler, cardsPerPlayer)
 }
 
-export function createGame(props: Partial<uno.Props>): uno.Game {
-  return uno.createGame(props)
-}
+// export function createGame(props: Partial<uno.Props>): uno.Game {
+//   return uno.createGame(props)
+// }

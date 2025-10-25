@@ -1,84 +1,73 @@
+import * as _ from 'lodash'
+
 export type Color =
     | "RED"
+    | "GREEN"
     | "BLUE"
     | "YELLOW"
-    | "GREEN"
 
 export type Type =
     | "NUMBERED"
     | "SKIP"
-    | "DRAW"
     | "REVERSE"
+    | "DRAW"
     | "WILD"
     | "WILD DRAW"
 
-export type Numbered = {
-    readonly type: "NUMBERED"
-    readonly color: Color
-    readonly number: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+export type Card = {
+    type: Type
+    color?: Color
+    number?: number
 }
 
-export type Action = {
-    readonly type: | "SKIP" | "DRAW" | "REVERSE"
-    readonly color: Color
-}
+export type Deck = Card[]
 
-export type Wild = {
-    readonly type: | "WILD" | "WILD DRAW"
-}
+const createInitialDeck = (): Card[] => {
+    const colors: Color[] = ['RED', 'GREEN', 'BLUE', 'YELLOW']
 
-export type Card = Numbered | Action | Wild
-
-const colors: Readonly<Color[]> = ["RED", "BLUE", "YELLOW", "GREEN"] as const
-
-export interface Deck {
-    readonly length: number
-    readonly cards: Card[]
-    filter(pred: (card: Card) => boolean): Card[]
-    draw(count: number): Card[] | undefined
-}
-
-export function createInitialDeck(): Deck {
-    const cards: Card[] = [];
-
-    for (const color of colors) {
-        cards.push({ type: "NUMBERED", color, number: 0 });
-        for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
-            cards.push({ type: "NUMBERED", color, number: n });
-            cards.push({ type: "NUMBERED", color, number: n });
+    const createNumberedCards = (color: Color): Card[] => {
+        const cards: Card[] = []
+        cards.push({ type: 'NUMBERED', color, number: 0 })
+        for (let i = 1; i <= 9; i++) {
+            cards.push({ type: 'NUMBERED', color, number: i })
+            cards.push({ type: 'NUMBERED', color, number: i })
         }
+        return cards
     }
 
-    for (const color of colors) {
-        cards.push({ type: "SKIP", color }, { type: "SKIP", color });
-        cards.push({ type: "REVERSE", color }, { type: "REVERSE", color });
-        cards.push({ type: "DRAW", color }, { type: "DRAW", color });
+    const createSpecialCards = (type: Type, color: Color): Card[] => {
+        return [
+            { type, color },
+            { type, color }
+        ]
     }
 
-    for (let i = 0; i < 4; i++) {
-        cards.push({ type: "WILD" });
-        cards.push({ type: "WILD DRAW" });
+    const createWildCards = (): Card[] => {
+        return [
+            { type: 'WILD' },
+            { type: 'WILD' },
+            { type: 'WILD' },
+            { type: 'WILD' },
+            { type: 'WILD DRAW' },
+            { type: 'WILD DRAW' },
+            { type: 'WILD DRAW' },
+            { type: 'WILD DRAW' }
+        ]
     }
 
-    return createDeck(cards)
+    const numberedDeck = colors.flatMap(createNumberedCards)
+    const skipCards = colors.flatMap(color => createSpecialCards('SKIP', color))
+    const reverseCards = colors.flatMap(color => createSpecialCards('REVERSE', color))
+    const drawCards = colors.flatMap(color => createSpecialCards('DRAW', color))
+    const wildCards = createWildCards()
+
+    return [
+        ...numberedDeck,
+        ...skipCards,
+        ...reverseCards,
+        ...drawCards,
+        ...wildCards
+    ]
 }
 
-export function createDeck(cards: Card[]): Deck {
-    return {
-        length: cards.length,
-        cards,
-        filter: function (pred: (card: Card) => boolean): Card[] {
-            return this.cards.filter(pred)
-        },
-        draw: function (count: number): Card[] | undefined {
-            const cards: Card[] = [];
-            for (let i = 0; i < count; i++) {
-                const card = this.cards.shift();
-                if (card) {
-                    cards.push(card);
-                }
-            }
-            return cards;
-        }
-    }
-}
+export { createInitialDeck }

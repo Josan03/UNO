@@ -13,7 +13,7 @@ const normalShuffle = shuffleBuilder()
 describe("Round set up", () => {
   const initialDeck = createInitialDeck()
   const dealtCardsCount = 4 * 7
-  const cards = normalShuffle(initialDeck.cards)
+  const cards = normalShuffle(initialDeck)
   const round = createRound({ players: ['a', 'b', 'c', 'd'], dealer: 1, shuffler: deterministicShuffle(cards) })
   it("has as many players as set in the properties", () => {
     expect(round.playerCount).toBe(4)
@@ -39,10 +39,8 @@ describe("Round set up", () => {
     round.hands.forEach(hand => expect(hand.length).toEqual(7))
   })
   it("deals 7 cards to each player from the top of the deck", () => {
-    const cards = normalShuffle(initialDeck.cards)
-    console.log(cards)
+    const cards = normalShuffle(initialDeck)
     const round = createRound({ players: ['a', 'b', 'c', 'd'], dealer: 3, shuffler: deterministicShuffle(cards) })
-    console.log(round.hands)
     round.hands.forEach((hand, playerIndex) => expect(hand).toEqual(cards.slice(7 * playerIndex, 7 * (playerIndex + 1))))
   })
   it("creates a discard pile with the top card", () => {
