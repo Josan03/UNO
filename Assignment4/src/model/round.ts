@@ -18,17 +18,41 @@ export interface Round {
     shuffler: (deck: Deck) => Deck
 }
 
-export const canPlay = (card: Card, topCard: Card, currentColor: Color): boolean => {
-    return card.type === 'WILD' || card.type === 'WILD DRAW' ||
-        card.color === topCard.color || card.number === topCard.number ||
-        card.color === currentColor;
+export const canPlay = (cardIndex: number, round: Round): boolean => {
+    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
+        return false
+
+    const cardToPlay = round.hands[round.playerInTurn][cardIndex];
+    const topCard = topOfDiscard(round);
+    const currentColor = round.currentColor;
+
+    if (cardToPlay.type === 'WILD DRAW') {
+        if (topCard.type === 'DRAW')
+            return true
+
+        const hasMatchingColorCard = round.hands[round.playerInTurn].some(card => card.color === currentColor && card.type !== 'DRAW')
+        if (hasMatchingColorCard)
+            return false
+    }
+
+    if (cardToPlay.type === 'WILD' || cardToPlay.type === 'WILD DRAW')
+        return true
+
+    if (cardToPlay.type === 'NUMBERED' && topCard.type === 'NUMBERED')
+        return cardToPlay.color === topCard.color || cardToPlay.number === topCard.number
+
+    if (cardToPlay.type === 'NUMBERED' && topCard.type !== 'NUMBERED')
+        return cardToPlay.color === currentColor
+
+    if (cardToPlay.type === topCard.type)
+        return true
+
+
+    return cardToPlay.color === currentColor
 };
 
 export const canPlayAny = (round: Round): boolean => {
-    const topCard = topOfDiscard(round)
-    const currentColor = round.currentColor
-
-    return round.hands[round.playerInTurn].some(card => canPlay(card, topCard, currentColor))
+    return round.hands[round.playerInTurn].some((_, index) => canPlay(index, round))
 }
 
 export const topOfDiscard = (round: Round): Card => round.discardPile[0];
@@ -75,14 +99,12 @@ export const play = (cardIndex: number, namedColor?: Color, round: Round): Round
         throw new Error(`Error: invalid card index, out of bounds`)
 
     const cardToPlay = round.hands[round.playerInTurn][cardIndex];
-    const topCard = topOfDiscard(round);
 
     if (cardToPlay.type === 'WILD' || cardToPlay.type === 'WILD DRAW') {
         if (!namedColor) throw new Error(`Error: illegal not to name a color`);
-        round.currentColor = namedColor;
-    } else if (!canPlay(cardToPlay, topCard, round.currentColor)) {
+    } else if (!canPlay(cardIndex, round)) {
         throw new Error(`Error: illegal play`);
-    } else if (canPlay(cardToPlay, topCard, round.currentColor) && namedColor)
+    } else if (canPlay(cardIndex, round) && namedColor)
         throw new Error(`Error: illegal changing color`)
 
     round.hands[round.playerInTurn].splice(cardIndex, 1);
@@ -170,7 +192,7 @@ export const createRound = (
     } else if (topCard.type === 'SKIP') {
         playerInTurn = (dealer + 2) % players.length
     } else if (topCard.type === 'DRAW') {
-        playerInTurn = (dealer + 1) % players.length
+        playerInTurn = (dealer + 2) % players.length
         hands[playerInTurn].push(drawPile.shift()!)
         hands[playerInTurn].push(drawPile.shift()!)
     }
