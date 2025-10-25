@@ -52,10 +52,14 @@ export const draw = (round: Round): Round => {
 
 export const drawMultiple = (round: Round, count: number): Round => {
     _.times(() => {
-        draw(round)
+        const drawnCard = round.drawPile.shift();
+        if (drawnCard) {
+            round.hands[round.playerInTurn].push(drawnCard);
+        }
+
+        if (round.drawPile.length === 0) replenishDrawPile(round)
     }, count)
 
-    if (round.drawPile.length === 0) replenishDrawPile(round)
     return round
 }
 
@@ -67,6 +71,9 @@ const replenishDrawPile = (round: Round): void => {
 };
 
 export const play = (cardIndex: number, namedColor?: Color, round: Round): Round => {
+    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
+        throw new Error(`Error: invalid card index, out of bounds`)
+
     const cardToPlay = round.hands[round.playerInTurn][cardIndex];
     const topCard = topOfDiscard(round);
 
