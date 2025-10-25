@@ -1,7 +1,6 @@
 import * as _ from 'lodash/fp'
 import { Card, Color, createInitialDeck, Deck } from "./deck"
 import { Shuffler, standardShuffler } from '../utils/random_utils'
-import { update } from 'lodash'
 
 export type Direction = "clockwise" | "counterclockwise"
 
@@ -16,6 +15,7 @@ export interface Round {
     currentColor: Color
     currentDirection: Direction
     shuffler: (deck: Deck) => Deck
+    unoCalled: boolean[]
 }
 
 export const canPlay = (cardIndex: number, round: Round): boolean => {
@@ -74,15 +74,15 @@ export const draw = (round: Round): Round => {
     return round;
 };
 
-export const drawMultiple = (round: Round, count: number): Round => {
-    _.times(() => {
+export const drawMultiple = (round: Round, count: number, playerIndex: number): Round => {
+    for (let i = 0; i < count; i++) {
         const drawnCard = round.drawPile.shift();
         if (drawnCard) {
-            round.hands[round.playerInTurn].push(drawnCard);
+            round.hands[playerIndex].push(drawnCard);
         }
 
         if (round.drawPile.length === 0) replenishDrawPile(round)
-    }, count)
+    }
 
     return round
 }
@@ -124,13 +124,13 @@ export const play = (cardIndex: number, namedColor?: Color, round: Round): Round
             break;
         case 'DRAW':
             updatePlayerTurn(round); // Move to the next player
-            round = drawMultiple(round, 2); // Draw 2 cards for the next player
+            round = drawMultiple(round, 2, round.playerInTurn); // Draw 2 cards for the next player
             updatePlayerTurn(round); // Skip the player which has drawn 2 cards
             break;
         case 'WILD DRAW':
             round.currentColor = namedColor!;
             updatePlayerTurn(round); // Move to the next player
-            round = drawMultiple(round, 4); // Draw 4 cards for the next player
+            round = drawMultiple(round, 4, round.playerInTurn); // Draw 4 cards for the next player
             updatePlayerTurn(round); // Skip the player which has drawn 4 cards
             break;
         case 'WILD':
@@ -142,8 +142,63 @@ export const play = (cardIndex: number, namedColor?: Color, round: Round): Round
             updatePlayerTurn(round);
     }
 
-    return round;
-};
+    return round
+}
+
+export const sayUno = (playerIndex: number, round: Round): Round => {
+    if (round.hands[playerIndex].length === 1)
+        round.unoCalled[playerIndex] = true
+
+    return round
+}
+
+export const checkUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): boolean => {
+    const accused = accuser.accused
+
+    if (round.hands[accused].length === 1 && !round.unoCalled[accused])
+        return true
+
+    return false
+}
+
+export const catchUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): Round => {
+    const accused = accuser.accused
+
+    if (round.hands[accused].length === 1 && !round.unoCalled[accused]) {
+        round = drawMultiple(round, 4, accused)
+    }
+
+    return round
+}
+
+export const hasEnded = (round: Round): boolean => {
+    return round.hands.some(hand => hand.length === 0)
+}
+
+export const winner = (round: Round): number | undefined => {
+    const winnerIndex = round.hands.findIndex(hand => hand.length === 0)
+    return winnerIndex >= 0 ? winnerIndex : undefined
+}
+
+export const score = (round: Round): number | undefined => {
+    if (!hasEnded(round)) return undefined
+
+    let totalScore = 0
+
+    round.hands.forEach(hand => {
+        hand.forEach(card => {
+            if (card.type === 'NUMBERED') {
+                totalScore += card.number!
+            } else if (['SKIP', 'REVERSE', 'DRAW'].includes(card.type)) {
+                totalScore += 20
+            } else if (card.type === 'WILD' || card.type === 'WILD DRAW') {
+                totalScore += 50
+            }
+        })
+    })
+
+    return totalScore
+}
 
 export const createRound = (
     players: string[],
@@ -160,7 +215,9 @@ export const createRound = (
     const deck = createInitialDeck()
     const shuffledDeck = shuffler(deck)
 
-    const hands = _.chunk(cardsPerPlayer, shuffledDeck.slice(0, cardsPerPlayer * players.length)) // Deal cardsPerPlayer cards to each player
+    const hands = Array.from({ length: players.length }, (_, index) =>
+        shuffledDeck.slice(index * cardsPerPlayer, (index + 1) * cardsPerPlayer)
+    );
 
     const discardPile = [shuffledDeck[cardsPerPlayer * players.length]] // First card
     let drawPile = shuffledDeck.slice(cardsPerPlayer * players.length + 1) // All other cards remained
@@ -192,9 +249,10 @@ export const createRound = (
     } else if (topCard.type === 'SKIP') {
         playerInTurn = (dealer + 2) % players.length
     } else if (topCard.type === 'DRAW') {
+        playerInTurn = (dealer + 1) % players.length
+        hands[playerInTurn].push(drawPile.shift()!)
+        hands[playerInTurn].push(drawPile.shift()!)
         playerInTurn = (dealer + 2) % players.length
-        hands[playerInTurn].push(drawPile.shift()!)
-        hands[playerInTurn].push(drawPile.shift()!)
     }
 
     return {
@@ -207,6 +265,7 @@ export const createRound = (
         playerInTurn,
         currentColor,
         currentDirection: direction,
-        shuffler
+        shuffler,
+        unoCalled: Array(players.length).fill(false)
     }
 }
