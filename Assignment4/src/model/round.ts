@@ -4,6 +4,15 @@ import { Shuffler, standardShuffler } from '../utils/random_utils'
 
 export type Direction = "clockwise" | "counterclockwise"
 
+// Helper function to clone a round without mutating the original
+const cloneRound = (round: Round): Round => ({
+    ...round,
+    hands: round.hands.map(hand => [...hand]),
+    drawPile: [...round.drawPile],
+    discardPile: [...round.discardPile],
+    unoCalled: [...round.unoCalled],
+})
+
 export interface Round {
     players: string[]
     dealer: number
@@ -11,14 +20,19 @@ export interface Round {
     hands: Card[][]
     drawPile: Deck
     discardPile: Deck
-    playerInTurn: number
+    playerInTurn: number | undefined
     currentColor: Color
     currentDirection: Direction
     shuffler: (deck: Deck) => Deck
     unoCalled: boolean[]
+    unoFailureChecked: boolean
+    unoFailureCandidate: number | undefined
 }
 
 export const canPlay = (cardIndex: number, round: Round): boolean => {
+    if (round.playerInTurn === undefined)
+        return false
+
     if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
         return false
 
@@ -30,7 +44,7 @@ export const canPlay = (cardIndex: number, round: Round): boolean => {
         if (topCard.type === 'DRAW')
             return true
 
-        const hasMatchingColorCard = round.hands[round.playerInTurn].some(card => card.color === currentColor && card.type !== 'DRAW')
+        const hasMatchingColorCard = round.hands[round.playerInTurn].some((card: Card) => card.color === currentColor && card.type !== 'DRAW')
         if (hasMatchingColorCard)
             return false
     }
@@ -52,26 +66,48 @@ export const canPlay = (cardIndex: number, round: Round): boolean => {
 };
 
 export const canPlayAny = (round: Round): boolean => {
-    return round.hands[round.playerInTurn].some((_, index) => canPlay(index, round))
+    if (round.playerInTurn === undefined)
+        return false
+
+    return round.hands[round.playerInTurn].some((_: Card, index: number) => canPlay(index, round))
 }
 
 export const topOfDiscard = (round: Round): Card => round.discardPile[0];
 
 export const updatePlayerTurn = (round: Round): void => {
+    if (round.playerInTurn === undefined) return
+
     const nextPlayer = (round.playerInTurn + (round.currentDirection === 'clockwise' ? 1 : -1) + round.players.length) % round.players.length;
     round.playerInTurn = nextPlayer
 };
 
 export const draw = (round: Round): Round => {
-    const drawnCard = round.drawPile.shift();
+    if (round.playerInTurn === undefined)
+        throw new Error('Error: game has ended')
+
+    const newRound = cloneRound(round)
+    const currentPlayer = newRound.playerInTurn
+    const drawnCard = newRound.drawPile.shift();
     if (drawnCard) {
-        round.hands[round.playerInTurn].push(drawnCard);
+        newRound.hands[newRound.playerInTurn!].push(drawnCard);
     }
 
-    if (round.drawPile.length === 0) replenishDrawPile(round);
-    if (!canPlayAny(round)) updatePlayerTurn(round);
+    if (newRound.drawPile.length === 0) replenishDrawPile(newRound);
+    if (!canPlayAny(newRound)) updatePlayerTurn(newRound);
 
-    return round;
+    if (newRound.unoFailureCandidate !== undefined && newRound.unoFailureCandidate !== currentPlayer) {
+        newRound.unoFailureCandidate = undefined
+    }
+
+    if (currentPlayer !== undefined) {
+        for (let i = 0; i < newRound.unoCalled.length; i++) {
+            if (i !== currentPlayer) {
+                newRound.unoCalled[i] = false
+            }
+        }
+    }
+
+    return newRound;
 };
 
 export const drawMultiple = (round: Round, count: number, playerIndex: number): Round => {
@@ -87,73 +123,123 @@ export const drawMultiple = (round: Round, count: number, playerIndex: number): 
     return round
 }
 
-const replenishDrawPile = (round: Round): void => {
+export const replenishDrawPile = (round: Round): void => {
     const topCard = round.discardPile[0];
     const remainingCards = round.discardPile.slice(1);
     round.drawPile = round.shuffler(remainingCards);
     round.discardPile = [topCard];
 };
 
-export const play = (cardIndex: number, namedColor?: Color, round: Round): Round => {
+export const play = (cardIndex: number, namedColor: Color | undefined, round: Round): Round => {
+    if (round.playerInTurn === undefined)
+        throw new Error('Error: game has ended')
+
     if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
         throw new Error(`Error: invalid card index, out of bounds`)
 
     const cardToPlay = round.hands[round.playerInTurn][cardIndex];
 
     if (cardToPlay.type === 'WILD' || cardToPlay.type === 'WILD DRAW') {
-        if (!namedColor) throw new Error(`Error: illegal not to name a color`);
+        if (!namedColor) namedColor = round.currentColor;
     } else if (!canPlay(cardIndex, round)) {
         throw new Error(`Error: illegal play`);
     } else if (canPlay(cardIndex, round) && namedColor)
         throw new Error(`Error: illegal changing color`)
 
-    round.hands[round.playerInTurn].splice(cardIndex, 1);
-    round.discardPile.unshift(cardToPlay);
+    const newRound = cloneRound(round)
+    newRound.hands[newRound.playerInTurn!].splice(cardIndex, 1);
+    newRound.discardPile.unshift(cardToPlay);
+
+    newRound.unoFailureChecked = false
+
+    const playerWhoPlayed = newRound.playerInTurn
+
+    if (newRound.unoFailureCandidate !== undefined && newRound.unoFailureCandidate !== playerWhoPlayed) {
+        newRound.unoFailureCandidate = undefined
+    }
+
+    if (playerWhoPlayed !== undefined) {
+        for (let i = 0; i < newRound.unoCalled.length; i++) {
+            if (i !== playerWhoPlayed) {
+                newRound.unoCalled[i] = false
+            }
+        }
+    }
+
+    if (playerWhoPlayed !== undefined && newRound.hands[playerWhoPlayed].length === 1) {
+        newRound.unoFailureCandidate = playerWhoPlayed
+    }
 
     switch (cardToPlay.type) {
         case 'REVERSE':
-            if (round.playerCount === 2) {
-                updatePlayerTurn(round) // Reverse works as skip for 2 players
+            if (newRound.playerCount === 2) {
+                updatePlayerTurn(newRound) // Reverse works as skip for 2 players
             }
-            round.currentDirection = round.currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise';
-            updatePlayerTurn(round);
+            newRound.currentDirection = newRound.currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise';
+            updatePlayerTurn(newRound);
             break;
         case 'SKIP':
-            updatePlayerTurn(round);
-            updatePlayerTurn(round); // Skip the next player
+            updatePlayerTurn(newRound);
+            updatePlayerTurn(newRound); // Skip the next player
             break;
         case 'DRAW':
-            updatePlayerTurn(round); // Move to the next player
-            round = drawMultiple(round, 2, round.playerInTurn); // Draw 2 cards for the next player
-            updatePlayerTurn(round); // Skip the player which has drawn 2 cards
+            updatePlayerTurn(newRound); // Move to the next player
+            const drawPlayer1 = newRound.playerInTurn;
+            if (drawPlayer1 !== undefined) {
+                drawMultiple(newRound, 2, drawPlayer1); // Draw 2 cards for the next player
+            }
+            updatePlayerTurn(newRound); // Skip the player which has drawn 2 cards
             break;
         case 'WILD DRAW':
-            round.currentColor = namedColor!;
-            updatePlayerTurn(round); // Move to the next player
-            round = drawMultiple(round, 4, round.playerInTurn); // Draw 4 cards for the next player
-            updatePlayerTurn(round); // Skip the player which has drawn 4 cards
+            newRound.currentColor = namedColor!;
+            updatePlayerTurn(newRound); // Move to the next player
+            const drawPlayer2 = newRound.playerInTurn;
+            if (drawPlayer2 !== undefined) {
+                drawMultiple(newRound, 4, drawPlayer2); // Draw 4 cards for the next player
+            }
+            updatePlayerTurn(newRound); // Skip the player which has drawn 4 cards
             break;
         case 'WILD':
-            round.currentColor = namedColor!;
-            updatePlayerTurn(round);
+            newRound.currentColor = namedColor!;
+            updatePlayerTurn(newRound);
             break;
         default:
-            round.currentColor = cardToPlay.color!;
-            updatePlayerTurn(round);
+            newRound.currentColor = cardToPlay.color!;
+            updatePlayerTurn(newRound);
     }
 
-    return round
+    if (playerWhoPlayed !== undefined && newRound.hands[playerWhoPlayed].length === 0) {
+        newRound.playerInTurn = undefined
+        return newRound
+    }
+
+    return newRound
 }
 
 export const sayUno = (playerIndex: number, round: Round): Round => {
-    if (round.hands[playerIndex].length === 1)
-        round.unoCalled[playerIndex] = true
+    if (round.playerInTurn === undefined)
+        throw new Error('Error: game has ended')
 
-    return round
+    if (playerIndex < 0 || playerIndex >= round.players.length)
+        throw new Error('Error: invalid player index')
+
+    const newRound = cloneRound(round)
+    newRound.unoCalled[playerIndex] = true
+
+    return newRound
 }
 
 export const checkUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): boolean => {
     const accused = accuser.accused
+
+    if (accused < 0 || accused >= round.players.length)
+        throw new Error('Error: invalid accused player index')
+
+    if (round.unoFailureCandidate !== accused)
+        return false
+
+    if (round.unoFailureChecked)
+        return false
 
     if (round.hands[accused].length === 1 && !round.unoCalled[accused])
         return true
@@ -164,11 +250,16 @@ export const checkUnoFailure = (accuser: { accuser: number, accused: number }, r
 export const catchUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): Round => {
     const accused = accuser.accused
 
-    if (round.hands[accused].length === 1 && !round.unoCalled[accused]) {
-        round = drawMultiple(round, 4, accused)
+    if (accused < 0 || accused >= round.players.length)
+        throw new Error('Error: invalid accused player index')
+
+    const newRound = cloneRound(round)
+    if (newRound.hands[accused].length === 1 && !newRound.unoCalled[accused]) {
+        drawMultiple(newRound, 4, accused)
+        newRound.unoFailureChecked = true
     }
 
-    return round
+    return newRound
 }
 
 export const hasEnded = (round: Round): boolean => {
@@ -266,6 +357,8 @@ export const createRound = (
         currentColor,
         currentDirection: direction,
         shuffler,
-        unoCalled: Array(players.length).fill(false)
+        unoCalled: Array(players.length).fill(false),
+        unoFailureChecked: false,
+        unoFailureCandidate: undefined
     }
 }
