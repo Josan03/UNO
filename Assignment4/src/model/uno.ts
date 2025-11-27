@@ -1,98 +1,123 @@
-import { Randomizer, Shuffler, standardRandomizer, standardShuffler } from '../utils/random_utils'
-import { Card } from './deck'
-import { Round, createRound, hasEnded, score, winner } from './round'
-
-export type Game = {
-    readonly players: string[]
-    readonly targetScore: number
-    readonly playerCount: number
-    readonly scores: number[]
-    readonly winner: number | undefined
-    readonly currentRound: Round | undefined
-    readonly shuffler?: Shuffler<Card>
-    readonly cardsPerPlayer?: number
-}
+import { createRound, Round, hasEnded, winner } from './round'
+import { Shuffler, standardShuffler } from '../utils/random_utils'
+import { Card, createInitialDeck } from './deck'
 
 export type GameProps = {
     players?: string[]
     targetScore?: number
-    randomizer?: Randomizer
+    randomizer?: () => number
     shuffler?: Shuffler<Card>
     cardsPerPlayer?: number
 }
 
-export function createGame(props: GameProps): Game {
+export type Game = {
+    playerCount: number
+    players: string[]
+    targetScore: number
+    scores: number[]
+    winner: number | undefined
+    currentRound: Round | undefined
+    dealer: number
+    randomizer: () => number
+    shuffler: Shuffler<Card>
+    cardsPerPlayer: number
+}
+
+export const createGame = (props: Partial<GameProps>): Game => {
     const players = props.players ?? ['A', 'B']
     const targetScore = props.targetScore ?? 500
-    const randomizer = props.randomizer ?? standardRandomizer
+    const randomizer = props.randomizer ?? Math.random
     const shuffler = props.shuffler ?? standardShuffler
     const cardsPerPlayer = props.cardsPerPlayer ?? 7
 
-    if (!Array.isArray(players) || players.length < 2) {
+    if (players.length < 2) {
         throw new Error('At least 2 players are required')
     }
-    if (!Number.isFinite(targetScore) || targetScore <= 0) {
+    if (targetScore <= 0) {
         throw new Error('Target score must be greater than 0')
     }
 
-    const dealer = Math.floor(randomizer(players.length))
-    const initialRound = createRound(players, dealer, shuffler, cardsPerPlayer)
-    const scores = Array(players.length).fill(0)
+    let dealer = randomizer()
+    if (dealer < 1) {
+        dealer = Math.floor(dealer * players.length)
+    }
+    dealer = dealer % players.length
 
-    return {
+    const originalShuffler = shuffler
+
+    const game: Game = {
+        playerCount: players.length,
         players,
         targetScore,
-        playerCount: players.length,
-        scores,
+        scores: players.map(() => 0),
         winner: undefined,
-        currentRound: initialRound,
-        shuffler,
+        currentRound: undefined,
+        dealer,
+        randomizer,
+        shuffler: originalShuffler,
         cardsPerPlayer
     }
+
+    const firstRoundDeck = originalShuffler(createInitialDeck())
+
+    const firstRoundShuffler: Shuffler<Card> = (cards) => {
+        if (cards.length === 108) {
+            return firstRoundDeck
+        }
+        return standardShuffler(cards)
+    }
+
+    game.currentRound = createRound(players, dealer, firstRoundShuffler, cardsPerPlayer)
+
+    return game
 }
 
-export function play(roundTransform: (round: Round) => Round, game: Game): Game {
-    if (!game.currentRound) {
+export const play = (roundAction: (round: Round) => Round, game: Game): Game => {
+    if (game.currentRound === undefined || game.winner !== undefined) {
         return game
     }
 
-    const newRound = roundTransform(game.currentRound)
+    const newRound = roundAction(game.currentRound)
 
-    if (!hasEnded(newRound)) {
-        return {
-            ...game,
-            currentRound: newRound
-        }
-    }
-
-    const winnerIndex = winner(newRound)
-    if (winnerIndex === undefined) {
-        return game
-    }
-
-    const earnedScore = score(newRound) ?? 0
-    const newScores = [...game.scores]
-    newScores[winnerIndex] += earnedScore
-
-    const gameWinner = newScores.findIndex(s => s >= game.targetScore)
-
-    if (gameWinner !== -1) {
-        return {
-            ...game,
-            scores: newScores,
-            winner: gameWinner,
-            currentRound: undefined
-        }
-    }
-
-    const newDealer = winnerIndex
-    const shufflerToUse = game.shuffler ?? standardShuffler
-    const cardsPerPlayerToUse = game.cardsPerPlayer ?? 7
-    const newRoundInstance = createRound(game.players, newDealer, shufflerToUse, cardsPerPlayerToUse)
-
-    return {
+    const newGame: Game = {
         ...game,
-        scores: newScores,
-        currentRound: newRoundInstance
+        scores: [...game.scores],
+        currentRound: newRound
     }
+
+    if (newRound.playerInTurn === undefined) {
+        const roundWinner = newRound.hands.findIndex(hand => hand.length === 0)
+        const roundScore = newRound.hands.reduce((total, hand, index) => {
+            if (index === roundWinner) return total
+            return total + hand.reduce((sum, card) => {
+                if (card.type === 'NUMBERED') return sum + (card.number ?? 0)
+                if (card.type === 'WILD' || card.type === 'WILD DRAW') return sum + 50
+                return sum + 20
+            }, 0)
+        }, 0)
+
+        newGame.scores[roundWinner] += roundScore
+
+        const gameWinner = newGame.scores.findIndex(score => score >= newGame.targetScore)
+        if (gameWinner !== -1) {
+            newGame.winner = gameWinner
+            newGame.currentRound = undefined
+        } else {
+            const nextDealer = (game.dealer + 1) % game.players.length
+            newGame.dealer = nextDealer
+
+            const newRoundDeck = newGame.shuffler(createInitialDeck())
+
+            const roundShuffler: Shuffler<Card> = (cards) => {
+                if (cards.length === 108) {
+                    return newRoundDeck
+                }
+                return standardShuffler(cards)
+            }
+
+            newGame.currentRound = createRound(newGame.players, nextDealer, roundShuffler, newGame.cardsPerPlayer)
+        }
+    }
+
+    return newGame
 }
