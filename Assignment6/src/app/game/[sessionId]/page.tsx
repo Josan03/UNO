@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Color } from '@/lib/game/deck'
-import PlayerHand from '@/components/PlayerHand'
-import BotHand from '@/components/BotHand'
-import DiscardPile from '@/components/DiscardPile'
 import toast, { Toaster } from 'react-hot-toast'
+import TopBar from '@/components/game/TopBar'
+import GameBoard from '@/components/game/GameBoard'
 
 interface RoundState {
     players: string[]
@@ -78,6 +77,7 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
         }
 
         fetchGameState()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionId, isMultiplayer])
 
     // Poll for game state in multiplayer
@@ -338,77 +338,26 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
         <div className="w-full min-h-screen p-10 flex flex-col items-center justify-center gap-12 bg-gradient-to-br from-green-700 via-green-800 to-green-900">
             <Toaster />
 
-            {/* Top bar */}
-            <div className="absolute top-0 flex flex-row gap-4 items-center w-full justify-between p-4 bg-black/20 backdrop-blur-sm">
-                <div className="text-white">Players: {playerCount} {isMultiplayer && '(Multiplayer)'}</div>
-                <div className="text-white font-bold">
-                    {roundState.playerInTurn !== undefined
-                        ? `Turn: ${roundState.players[roundState.playerInTurn]}`
-                        : 'Game Over'}
-                </div>
-                <button
-                    onClick={() => router.push('/')}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                    Exit
-                </button>
-            </div>
+            <TopBar
+                playerCount={playerCount}
+                isMultiplayer={isMultiplayer}
+                currentPlayerName={roundState.playerInTurn !== undefined ? roundState.players[roundState.playerInTurn] : undefined}
+                gameOver={roundState.playerInTurn === undefined}
+                onExit={() => router.push('/')}
+            />
 
-            {/* Top opponent(s) */}
-            {(playerCount === 2 || playerCount === 4) && opponentIndices[playerCount === 2 ? 0 : 1] !== undefined && (
-                <div className="flex flex-col w-full items-center gap-4">
-                    <BotHand
-                        name={roundState.players[opponentIndices[playerCount === 2 ? 0 : 1]]}
-                        index={opponentIndices[playerCount === 2 ? 0 : 1]}
-                        isActive={roundState.playerInTurn === opponentIndices[playerCount === 2 ? 0 : 1]}
-                        cards={roundState.hands[opponentIndices[playerCount === 2 ? 0 : 1]]}
-                        orientation="horizontal"
-                    />
-                </div>
-            )}
-
-            {/* Middle row with side opponents and center pile */}
-            <div className="flex flex-row w-full justify-between items-center">
-                {/* Left opponent */}
-                {(playerCount === 3 || playerCount === 4) && opponentIndices[0] !== undefined && (
-                    <BotHand
-                        name={roundState.players[opponentIndices[0]]}
-                        index={opponentIndices[0]}
-                        isActive={roundState.playerInTurn === opponentIndices[0]}
-                        cards={roundState.hands[opponentIndices[0]]}
-                        orientation="vertical"
-                    />
-                )}
-
-                {/* Center: Discard pile and draw pile */}
-                <div className="flex-1 flex justify-center">
-                    <DiscardPile
-                        topCard={roundState.discardPile[0]}
-                        currentColor={roundState.currentColor}
-                        drawPileCount={roundState.drawPileCount}
-                        onDrawCard={handleDrawCard}
-                    />
-                </div>
-
-                {/* Right opponent */}
-                {(playerCount === 3 || playerCount === 4) && opponentIndices[playerCount === 3 ? 1 : 2] !== undefined && (
-                    <BotHand
-                        name={roundState.players[opponentIndices[playerCount === 3 ? 1 : 2]]}
-                        index={opponentIndices[playerCount === 3 ? 1 : 2]}
-                        isActive={roundState.playerInTurn === opponentIndices[playerCount === 3 ? 1 : 2]}
-                        cards={roundState.hands[opponentIndices[playerCount === 3 ? 1 : 2]]}
-                        orientation="vertical"
-                    />
-                )}
-            </div>
-
-            {/* Bottom: Player hand */}
-            <PlayerHand
-                name={roundState.players[myPlayerIndex]}
-                index={myPlayerIndex}
-                isActive={roundState.playerInTurn === myPlayerIndex}
-                cards={roundState.hands[myPlayerIndex]}
-                onPlay={handlePlayCard}
+            <GameBoard
+                playerCount={playerCount}
+                players={roundState.players}
+                hands={roundState.hands}
+                playerInTurn={roundState.playerInTurn}
+                myPlayerIndex={myPlayerIndex}
+                opponentIndices={opponentIndices}
+                discardPile={roundState.discardPile}
+                currentColor={roundState.currentColor}
+                drawPileCount={roundState.drawPileCount}
+                onPlayCard={handlePlayCard}
+                onDrawCard={handleDrawCard}
             />
         </div>
     )
