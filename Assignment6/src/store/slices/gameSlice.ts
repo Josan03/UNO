@@ -10,9 +10,15 @@ export interface RoundState {
     drawPileCount: number
 }
 
+export interface PlayHistoryEntry {
+    card: Card
+    playerName: string
+}
+
 export interface GameState {
     sessionId: string | null
     roundState: RoundState | null
+    playHistory: PlayHistoryEntry[]
     loading: boolean
     error: string | null
     isMultiplayer: boolean
@@ -22,6 +28,7 @@ export interface GameState {
 export const initialGameState: GameState = {
     sessionId: null,
     roundState: null,
+    playHistory: [],
     loading: true,
     error: null,
     isMultiplayer: false,
@@ -31,6 +38,7 @@ export const initialGameState: GameState = {
 export type GameAction =
     | { type: 'SET_SESSION_ID'; payload: string }
     | { type: 'SET_ROUND_STATE'; payload: RoundState }
+    | { type: 'ADD_PLAY_HISTORY'; payload: PlayHistoryEntry }
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'SET_GAME_MODE'; payload: { isMultiplayer: boolean; roomCode: string | null } }
@@ -42,6 +50,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             return { ...state, sessionId: action.payload }
         case 'SET_ROUND_STATE':
             return { ...state, roundState: action.payload }
+        case 'ADD_PLAY_HISTORY':
+            return {
+                ...state,
+                playHistory: [action.payload, ...state.playHistory].slice(0, 10) // Keep last 10 plays
+            }
         case 'SET_LOADING':
             return { ...state, loading: action.payload }
         case 'SET_ERROR':

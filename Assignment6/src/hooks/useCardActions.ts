@@ -3,6 +3,7 @@
 import toast from 'react-hot-toast'
 import { Card, Color } from '@/lib/game/deck'
 import { RoundState } from '@/store/slices/gameSlice'
+import { useAppDispatch } from '@/store/hooks'
 
 export function useCardActions(
     sessionId: string | null,
@@ -12,8 +13,13 @@ export function useCardActions(
     onBotTurn: (state: RoundState) => void,
     onGameEnd: () => void
 ) {
+    const dispatch = useAppDispatch()
+
     const handlePlayCard = async (cardIndex: number, namedColor?: Color) => {
         if (!sessionId || !roundState || roundState.playerInTurn !== myPlayerIndex) return
+
+        const playedCard = roundState.hands[myPlayerIndex][cardIndex]
+        const playerName = roundState.players[myPlayerIndex]
 
         try {
             const response = await fetch('/api/play', {
@@ -39,6 +45,15 @@ export function useCardActions(
                 })
                 return null
             }
+
+            // Add to play history
+            dispatch({
+                type: 'game',
+                action: {
+                    type: 'ADD_PLAY_HISTORY',
+                    payload: { card: playedCard, playerName }
+                }
+            })
 
             const data = await response.json()
 

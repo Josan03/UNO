@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, Color } from '@/lib/game/deck'
-import { RoundState } from '@/store/slices/gameSlice'
+import { RoundState, PlayHistoryEntry } from '@/store/slices/gameSlice'
 
 export async function executeBotPlay(
     sessionId: string,
@@ -10,7 +10,8 @@ export async function executeBotPlay(
     roomCode: string | null,
     setRoundState: (state: RoundState) => void,
     onGameEnd: () => void,
-    onContinueBotTurn: (state: RoundState) => void
+    onContinueBotTurn: (state: RoundState) => void,
+    onAddHistory?: (entry: PlayHistoryEntry) => void
 ) {
     // In multiplayer, check if current player is a bot
     if (isMultiplayer && roomCode) {
@@ -57,6 +58,7 @@ export async function executeBotPlay(
 
         if (playableIndex >= 0) {
             const card = botHand[playableIndex]
+            const playerName = currentState.players[currentState.playerInTurn!]
             const namedColor = card.type === 'WILD' || card.type === 'WILD DRAW'
                 ? ['RED', 'GREEN', 'BLUE', 'YELLOW'][Math.floor(Math.random() * 4)] as Color
                 : undefined
@@ -69,6 +71,12 @@ export async function executeBotPlay(
 
             if (response.ok) {
                 const data = await response.json()
+
+                // Add to play history
+                if (onAddHistory) {
+                    onAddHistory({ card, playerName })
+                }
+
                 setRoundState(data.round)
 
                 // Check if game ended

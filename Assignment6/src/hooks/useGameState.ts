@@ -41,9 +41,10 @@ export function useGameState(
             roomCode,
             (state) => updateRoundStateRef.current(state),
             () => onGameEndRef.current(),
-            (state) => setTimeout(() => botPlay(state), 1000)
+            (state) => setTimeout(() => botPlay(state), 1000),
+            (entry) => dispatch({ type: 'game', action: { type: 'ADD_PLAY_HISTORY', payload: entry } })
         )
-    }, [sessionId, isMultiplayer, roomCode])
+    }, [sessionId, isMultiplayer, roomCode, dispatch])
 
     // Fetch initial game state
     useEffect(() => {

@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { useAppState, useAppDispatch } from '@/store/hooks'
 import TopBar from '@/components/game/TopBar'
 import GameBoard from '@/components/game/GameBoard'
+import PlayHistory from '@/components/game/PlayHistory'
 import { useGameSession } from '@/hooks/useGameSession'
 import { useGameState } from '@/hooks/useGameState'
 import { useCardActions } from '@/hooks/useCardActions'
@@ -13,7 +14,7 @@ import { Color } from '@/lib/game/deck'
 export default function GamePage({ params }: { params: Promise<{ sessionId: string }> }) {
     const state = useAppState()
     const dispatch = useAppDispatch()
-    const { roundState, loading, error } = state.game
+    const { roundState, playHistory, loading, error } = state.game
 
     const {
         sessionId,
@@ -100,7 +101,7 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
     if (!roundState) return null
 
     return (
-        <div className="w-full min-h-screen p-10 flex flex-col items-center justify-center gap-12 bg-gradient-to-br from-green-700 via-green-800 to-green-900">
+        <div className="w-full min-h-screen p-10 flex flex-col items-center justify-center gap-12 bg-gradient-to-br from-green-700 via-green-800 to-green-900 relative">
             <Toaster />
 
             <TopBar
@@ -110,6 +111,8 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
                 gameOver={roundState.playerInTurn === undefined}
                 onExit={() => router.push('/')}
             />
+
+            <PlayHistory history={playHistory} />
 
             <GameBoard
                 playerCount={roundState.players.length}
