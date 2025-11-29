@@ -22,12 +22,9 @@ export default function BotHand({
 }: BotHandProps) {
     return (
         <div
-            className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} gap-2 items-center ${!isActive ? 'opacity-50' : ''
-                } ${className}`}
+            className={`flex flex-col gap-3 items-center ${!isActive ? 'opacity-50' : ''} ${className}`}
         >
-            <p
-                className={`text-2xl font-bold text-white ${orientation === 'vertical' ? 'writing-mode-vertical' : ''}`}
-            >
+            <p className="text-3xl font-bold text-white mb-2">
                 {name}
             </p>
             <div className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} gap-1`}>

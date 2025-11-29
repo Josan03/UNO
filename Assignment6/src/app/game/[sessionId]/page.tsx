@@ -6,6 +6,7 @@ import { Card, Color } from '@/lib/game/deck'
 import PlayerHand from '@/components/PlayerHand'
 import BotHand from '@/components/BotHand'
 import DiscardPile from '@/components/DiscardPile'
+import toast, { Toaster } from 'react-hot-toast'
 
 interface RoundState {
     players: string[]
@@ -217,7 +218,19 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
 
             if (!response.ok) {
                 const data = await response.json()
-                alert(data.error || 'Invalid move')
+                toast.error(data.error || 'Invalid move', {
+                    duration: 3000,
+                    position: 'top-center',
+                    style: {
+                        background: '#ef4444',
+                        color: '#fff',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        padding: '16px',
+                        borderRadius: '8px',
+                    },
+                    icon: '❌',
+                })
                 return
             }
 
@@ -228,8 +241,19 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
             if (data.round.playerInTurn === undefined) {
                 const winnerIndex = data.round.hands.findIndex((h: Card[]) => h.length === 0)
                 setTimeout(() => {
-                    alert(`🎉 ${data.round.players[winnerIndex]} wins!`)
-                    router.push('/')
+                    toast.success(`🎉 ${data.round.players[winnerIndex]} wins!`, {
+                        duration: 4000,
+                        position: 'top-center',
+                        style: {
+                            background: '#10b981',
+                            color: '#fff',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            padding: '20px',
+                            borderRadius: '8px',
+                        },
+                    })
+                    setTimeout(() => router.push('/'), 3000)
                 }, 500)
                 return
             }
@@ -240,7 +264,10 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
             }
         } catch (err) {
             console.error('Play card error:', err)
-            alert('Failed to play card')
+            toast.error('Failed to play card', {
+                duration: 3000,
+                position: 'top-center',
+            })
         }
     }
 
@@ -256,7 +283,10 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
 
             if (!response.ok) {
                 const data = await response.json()
-                alert(data.error || 'Failed to draw card')
+                toast.error(data.error || 'Failed to draw card', {
+                    duration: 3000,
+                    position: 'top-center',
+                })
                 return
             }
 
@@ -266,7 +296,10 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
             // If still player's turn after drawing, they can play the drawn card
         } catch (err) {
             console.error('Draw card error:', err)
-            alert('Failed to draw card')
+            toast.error('Failed to draw card', {
+                duration: 3000,
+                position: 'top-center',
+            })
         }
     }
 
@@ -303,6 +336,8 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
 
     return (
         <div className="w-full min-h-screen p-10 flex flex-col items-center justify-center gap-12 bg-gradient-to-br from-green-700 via-green-800 to-green-900">
+            <Toaster />
+
             {/* Top bar */}
             <div className="absolute top-0 flex flex-row gap-4 items-center w-full justify-between p-4 bg-black/20 backdrop-blur-sm">
                 <div className="text-white">Players: {playerCount} {isMultiplayer && '(Multiplayer)'}</div>
