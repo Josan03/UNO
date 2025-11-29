@@ -2,6 +2,7 @@
 
 import { Card, Color } from '@/lib/game/deck'
 import UnoCard from './UnoCard'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface DiscardPileProps {
     topCard: Card
@@ -26,7 +27,27 @@ export default function DiscardPile({ topCard, currentColor, drawPileCount, onDr
         <div className="flex flex-row gap-2">
             <div className="flex flex-row gap-1 border-4 rounded-2xl p-2 w-fit border-white/30">
                 <UnoCard back onClick={onDrawCard} className="hover:scale-105 transition-transform" />
-                <UnoCard card={topCard} />
+                <div className="relative">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={`${topCard.type}-${topCard.color}-${topCard.number}`}
+                            initial={{
+                                y: 200,
+                                opacity: 0.8
+                            }}
+                            animate={{
+                                y: 0,
+                                opacity: 1
+                            }}
+                            transition={{
+                                duration: 0.3,
+                                ease: [0.22, 0.61, 0.36, 1]
+                            }}
+                        >
+                            <UnoCard card={topCard} />
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
             </div>
             <div className="flex flex-col justify-between items-center">
                 <div className={`w-16 h-16 rounded-lg ${colorClass} border-4 border-white shadow-lg`}></div>
