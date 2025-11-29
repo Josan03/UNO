@@ -16,19 +16,9 @@ Quick start
 npm install
 ```
 
-2. Start server (in separate terminal):
+2. Start server/client (in separate terminal):
 
 ```bash
-npm run start:server
+npm start --workspace=server
+npm start --workspace=client
 ```
-
-3. Start client (in separate terminal):
-
-```bash
-npm run start:client
-```
-
-Notes
-
-- Both client and server reference a local `domain` package.
-- This scaffold is intentionally minimal; expand the schema and UI to implement full UNO rules.

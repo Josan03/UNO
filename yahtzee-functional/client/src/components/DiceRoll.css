@@ -1,0 +1,46 @@
+  .diceheader {
+    grid-row: 1;
+    grid-column: 2 / 6;
+    font-size: x-large;
+    margin-bottom: 1rem;
+  }
+  .dice {
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 2fr;
+  }
+  .die {
+    grid-row: 2;
+    text-align: center;
+  }
+  .die1 {
+    content: url(@/assets/1.png);
+  }
+  .die2 {
+    content: url(@/assets/2.png);
+  }
+  .die3 {
+    content: url(@/assets/3.png);
+  }
+  .die4 {
+    content: url(@/assets/4.png);
+  }
+  .die5 {
+    content: url(@/assets/5.png);
+  }
+  .die6 {
+    content: url(@/assets/6.png);
+  }
+  .reroll {
+    grid-row: 2;
+    text-align: center;
+  }
+  .reroll button {
+    padding: auto;
+  }
+  .caption {
+    grid-row: 3;
+    margin-left: 1rem;
+  }
+  .dice input {
+    grid-row: 3;
+  }

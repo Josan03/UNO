@@ -1,0 +1,23 @@
+  .score {
+    display: inline-block;
+  }
+  .scorecard {
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+  .scorecard td {
+    border: 1px solid black;
+    padding: .3rem;
+  }
+  .activeplayer {
+    font-weight: bold;
+  }
+  .clickable {
+    cursor: pointer;
+  }
+  .potential {
+    color: transparent;
+  }
+  .potential:hover {
+    color: black;
+  }
