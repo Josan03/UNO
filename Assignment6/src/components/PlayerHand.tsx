@@ -41,10 +41,10 @@ export default function PlayerHand({ name, index, isActive, cards, onPlay }: Pla
 
             <div className="flex flex-row gap-1">
                 {cards.map((card, idx) => (
-                    <div key={idx} className="ml-[-20px]" onClick={() => handleClick(card, idx)}>
+                    <div key={idx} className="-ml-5" onClick={() => handleClick(card, idx)}>
                         <UnoCard
                             card={card}
-                            className={`transition-transform ${isActive ? 'hover:scale-105 hover:translate-y-[-8px]' : ''}`}
+                            className={`transition-transform ${isActive ? 'hover:scale-105 hover:-translate-y-2' : ''}`}
                         />
                     </div>
                 ))}

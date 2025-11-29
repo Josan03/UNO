@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useAppState, useAppDispatch } from '@/store/hooks'
 import { executeBotPlay } from '@/lib/game/botPlayer'
+import { RoundState } from '@/store/slices/gameSlice'
 
 export function useGameState(
     sessionId: string | null,
@@ -14,11 +15,23 @@ export function useGameState(
     const dispatch = useAppDispatch()
     const { roundState, loading, error } = state.game
 
-    const updateRoundState = useCallback((newState: any) => {
+    // Use ref to avoid circular dependencies
+    const onGameEndRef = useRef(onGameEnd)
+    useEffect(() => {
+        onGameEndRef.current = onGameEnd
+    }, [onGameEnd])
+
+    const updateRoundState = useCallback((newState: RoundState) => {
         dispatch({ type: 'game', action: { type: 'SET_ROUND_STATE', payload: newState } })
     }, [dispatch])
 
-    const botPlay = useCallback((currentState: any) => {
+    // Use ref for updateRoundState to break circular dependency
+    const updateRoundStateRef = useRef(updateRoundState)
+    useEffect(() => {
+        updateRoundStateRef.current = updateRoundState
+    }, [updateRoundState])
+
+    const botPlay = useCallback((currentState: RoundState) => {
         if (!sessionId) return
 
         executeBotPlay(
@@ -26,11 +39,11 @@ export function useGameState(
             currentState,
             isMultiplayer,
             roomCode,
-            updateRoundState,
-            onGameEnd,
+            (state) => updateRoundStateRef.current(state),
+            () => onGameEndRef.current(),
             (state) => setTimeout(() => botPlay(state), 1000)
         )
-    }, [sessionId, isMultiplayer, roomCode, onGameEnd, updateRoundState])
+    }, [sessionId, isMultiplayer, roomCode])
 
     // Fetch initial game state
     useEffect(() => {
@@ -57,13 +70,17 @@ export function useGameState(
         }
 
         fetchGameState()
-    }, [sessionId, isMultiplayer, botPlay, dispatch])
+    }, [sessionId, isMultiplayer, dispatch, botPlay])
 
     // Poll for game state in multiplayer
     useEffect(() => {
         if (!sessionId || !isMultiplayer) return
 
+        let isPolling = false
         const interval = setInterval(async () => {
+            if (isPolling) return // Skip if previous poll still running
+            isPolling = true
+
             try {
                 const response = await fetch(`/api/state/${sessionId}`)
                 if (response.ok) {
@@ -73,15 +90,34 @@ export function useGameState(
                     // Check if game ended
                     if (data.round.playerInTurn === undefined) {
                         clearInterval(interval)
+                        return
+                    }
+
+                    // In multiplayer, trigger bot play if it's a bot's turn
+                    if (isMultiplayer && roomCode && data.round.playerInTurn !== undefined) {
+                        try {
+                            const roomResponse = await fetch(`/api/room/${roomCode}`)
+                            if (roomResponse.ok) {
+                                const roomData = await roomResponse.json()
+                                const currentPlayer = roomData.room.players[data.round.playerInTurn]
+                                if (currentPlayer && currentPlayer.type === 'bot') {
+                                    setTimeout(() => botPlay(data.round), 1000)
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Error checking player type in polling:', err)
+                        }
                     }
                 }
             } catch (error) {
                 console.error('Error polling game state:', error)
+            } finally {
+                isPolling = false
             }
         }, 3000)
 
         return () => clearInterval(interval)
-    }, [sessionId, isMultiplayer, dispatch])
+    }, [sessionId, isMultiplayer, dispatch, roomCode, botPlay])
 
     return { roundState, updateRoundState, loading, error, botPlay }
 }

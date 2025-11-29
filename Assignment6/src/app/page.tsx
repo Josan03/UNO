@@ -16,7 +16,7 @@ export default function Home() {
               left: `${(i * 15) % 100}%`,
               top: `${(i * 20) % 100}%`,
               background: ['#ef4444', '#3b82f6', '#22c55e', '#eab308'][i % 4],
-              rotate: Math.random() * 360
+              rotate: (i * 45) % 360
             }}
             animate={{
               y: [0, -30, 0],

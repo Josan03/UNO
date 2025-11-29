@@ -29,7 +29,7 @@ export default function BotHand({
             </p>
             <div className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} gap-1`}>
                 {cards.map((_, idx) => (
-                    <div key={idx} className={orientation === 'vertical' ? 'mt-[-20px]' : 'ml-[-20px]'}>
+                    <div key={idx} className={orientation === 'vertical' ? '-mt-5' : '-ml-5'}>
                         <UnoCard back />
                     </div>
                 ))}

@@ -2,16 +2,7 @@
 
 import toast from 'react-hot-toast'
 import { Card, Color } from '@/lib/game/deck'
-
-interface RoundState {
-    players: string[]
-    playerInTurn: number | undefined
-    currentColor: Color
-    currentDirection: 'clockwise' | 'counterclockwise'
-    hands: Card[][]
-    discardPile: Card[]
-    drawPileCount: number
-}
+import { RoundState } from '@/store/slices/gameSlice'
 
 export function useCardActions(
     sessionId: string | null,
@@ -108,6 +99,12 @@ export function useCardActions(
             }
 
             const data = await response.json()
+
+            // Trigger bot play if it's bot's turn after draw in single player mode
+            if (!isMultiplayer && data.round.playerInTurn !== undefined && data.round.playerInTurn !== 0) {
+                setTimeout(() => onBotTurn(data.round), 1000)
+            }
+
             return data.round
         } catch (err) {
             console.error('Draw card error:', err)

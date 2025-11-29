@@ -27,26 +27,26 @@ export default function UnoCard({ card, back, onClick, className = '' }: UnoCard
                 <div
                     onClick={onClick}
                     className={`relative w-24 h-36 rounded-xl border-[6px] border-white shadow-lg overflow-hidden flex items-center justify-center text-white font-bold select-none ${card.type !== 'WILD' && card.type !== 'WILD DRAW'
-                            ? card.color === 'RED'
-                                ? 'bg-red-600'
-                                : card.color === 'GREEN'
-                                    ? 'bg-green-600'
-                                    : card.color === 'BLUE'
-                                        ? 'bg-blue-600'
-                                        : card.color === 'YELLOW'
-                                            ? 'bg-yellow-400'
-                                            : 'bg-gray-500'
-                            : 'bg-black'
+                        ? card.color === 'RED'
+                            ? 'bg-red-600'
+                            : card.color === 'GREEN'
+                                ? 'bg-green-600'
+                                : card.color === 'BLUE'
+                                    ? 'bg-blue-600'
+                                    : card.color === 'YELLOW'
+                                        ? 'bg-yellow-400'
+                                        : 'bg-gray-500'
+                        : 'bg-black'
                         } ${onClick ? 'cursor-pointer' : ''} ${className}`}
                 >
                     {/* Inner oval */}
                     {card.type !== 'WILD' && card.type !== 'WILD DRAW' && (
-                        <div className="absolute inset-0 bg-white rounded-full scale-90 -skew-x-[20deg] z-0"></div>
+                        <div className="absolute inset-0 bg-white rounded-full scale-90 -skew-x-12 z-0"></div>
                     )}
 
                     {/* Multicolor oval for WILD */}
                     {(card.type === 'WILD' || card.type === 'WILD DRAW') && (
-                        <div className="absolute inset-0 rounded-full scale-90 -skew-x-[20deg] z-0 overflow-hidden flex flex-col">
+                        <div className="absolute inset-0 rounded-full scale-90 -skew-x-12 z-0 overflow-hidden flex flex-col">
                             <div className="flex-1 flex">
                                 <div className="flex-1 bg-red-600"></div>
                                 <div className="flex-1 bg-yellow-400"></div>
@@ -63,14 +63,14 @@ export default function UnoCard({ card, back, onClick, className = '' }: UnoCard
                         <>
                             <span
                                 className={`relative z-10 text-5xl ${card.color === 'RED'
-                                        ? 'text-red-600'
-                                        : card.color === 'GREEN'
-                                            ? 'text-green-600'
-                                            : card.color === 'BLUE'
-                                                ? 'text-blue-600'
-                                                : card.color === 'YELLOW'
-                                                    ? 'text-yellow-600'
-                                                    : 'text-gray-600'
+                                    ? 'text-red-600'
+                                    : card.color === 'GREEN'
+                                        ? 'text-green-600'
+                                        : card.color === 'BLUE'
+                                            ? 'text-blue-600'
+                                            : card.color === 'YELLOW'
+                                                ? 'text-yellow-600'
+                                                : 'text-gray-600'
                                     }`}
                                 style={{
                                     textShadow: '2px 2px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white'
@@ -94,16 +94,16 @@ export default function UnoCard({ card, back, onClick, className = '' }: UnoCard
                             )}
                             <span
                                 className={`relative z-10 text-5xl ${card.type !== 'WILD' && card.type !== 'WILD DRAW'
-                                        ? card.color === 'RED'
-                                            ? 'text-red-600'
-                                            : card.color === 'GREEN'
-                                                ? 'text-green-600'
-                                                : card.color === 'BLUE'
-                                                    ? 'text-blue-600'
-                                                    : card.color === 'YELLOW'
-                                                        ? 'text-yellow-600'
-                                                        : 'text-gray-600'
-                                        : 'text-white'
+                                    ? card.color === 'RED'
+                                        ? 'text-red-600'
+                                        : card.color === 'GREEN'
+                                            ? 'text-green-600'
+                                            : card.color === 'BLUE'
+                                                ? 'text-blue-600'
+                                                : card.color === 'YELLOW'
+                                                    ? 'text-yellow-600'
+                                                    : 'text-gray-600'
+                                    : 'text-white'
                                     }`}
                             >
                                 {card.type === 'SKIP' && '⦸'}

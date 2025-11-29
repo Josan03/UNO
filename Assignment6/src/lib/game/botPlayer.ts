@@ -1,16 +1,7 @@
 'use client'
 
 import { Card, Color } from '@/lib/game/deck'
-
-interface RoundState {
-    players: string[]
-    playerInTurn: number | undefined
-    currentColor: Color
-    currentDirection: 'clockwise' | 'counterclockwise'
-    hands: Card[][]
-    discardPile: Card[]
-    drawPileCount: number
-}
+import { RoundState } from '@/store/slices/gameSlice'
 
 export async function executeBotPlay(
     sessionId: string,
@@ -89,6 +80,20 @@ export async function executeBotPlay(
                 // Continue bot turns in single player
                 if (!isMultiplayer && data.round.playerInTurn !== 0) {
                     onContinueBotTurn(data.round)
+                } else if (isMultiplayer && roomCode && data.round.playerInTurn !== undefined) {
+                    // In multiplayer, check if next player is also a bot
+                    try {
+                        const roomResponse = await fetch(`/api/room/${roomCode}`)
+                        if (roomResponse.ok) {
+                            const roomData = await roomResponse.json()
+                            const nextPlayer = roomData.room.players[data.round.playerInTurn]
+                            if (nextPlayer && nextPlayer.type === 'bot') {
+                                onContinueBotTurn(data.round)
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error checking next player after bot play:', err)
+                    }
                 }
             }
         } else {
@@ -103,9 +108,31 @@ export async function executeBotPlay(
                 const data = await response.json()
                 setRoundState(data.round)
 
-                // Check if still bot's turn in single player
-                if (!isMultiplayer && data.round.playerInTurn !== 0 && data.round.playerInTurn !== undefined) {
-                    onContinueBotTurn(data.round)
+                // Check if game ended
+                if (data.round.playerInTurn === undefined) {
+                    onGameEnd()
+                    return
+                }
+
+                // Check if still bot's turn (single or multiplayer)
+                if (data.round.playerInTurn !== undefined) {
+                    if (!isMultiplayer && data.round.playerInTurn !== 0) {
+                        onContinueBotTurn(data.round)
+                    } else if (isMultiplayer && roomCode) {
+                        // In multiplayer, check if next player is also a bot
+                        try {
+                            const roomResponse = await fetch(`/api/room/${roomCode}`)
+                            if (roomResponse.ok) {
+                                const roomData = await roomResponse.json()
+                                const nextPlayer = roomData.room.players[data.round.playerInTurn]
+                                if (nextPlayer && nextPlayer.type === 'bot') {
+                                    onContinueBotTurn(data.round)
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Error checking next player after bot draw:', err)
+                        }
+                    }
                 }
             }
         }
