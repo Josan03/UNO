@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import type { State, Dispatch } from "../stores/store";
 import type { PlayerState } from "../slices/player_slice";
 import NewGameThunk from "../thunks/NewGameThunk";
+import Page from "../components/Page";
 
 export default function Lobby() {
   const { player } = useSelector<State, PlayerState>((state) => state.player);
@@ -25,16 +26,18 @@ export default function Lobby() {
 
   return (
     player && (
-      <main>
-        Number of players:{" "}
-        <input
-          min="2"
-          type="number"
-          value={number_of_players}
-          onChange={(e) => set_number_of_players(parseInt(e.target.value))}
-        />
-        <button onClick={() => new_game(player)}>New Game</button>
-      </main>
+      <Page>
+        <main>
+          Number of players:{" "}
+          <input
+            min="2"
+            type="number"
+            value={number_of_players}
+            onChange={(e) => set_number_of_players(parseInt(e.target.value))}
+          />
+          <button onClick={() => new_game(player)}>New Game</button>
+        </main>
+      </Page>
     )
   );
 }

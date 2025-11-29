@@ -2,78 +2,54 @@ import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router";
 import type { State, Dispatch } from "../stores/store";
+import type { PlayerState } from "../slices/player_slice";
+import type { IndexedUnoSpecs } from "../model/game";
+import type { OngoingGamesState } from "../slices/ongoing_games_slice";
+import * as pending from "../slices/pending_games_slice";
 import JoinThunk from "../thunks/JoinThunk";
+import Page from "../components/Page";
+import * as _ from "lodash/fp";
 
 export default function Pending() {
-  const { id } = useParams<{ id: string }>();
-  const player = useSelector((state: State) => state.player.player);
-  const pendingGames = useSelector((state: State) => state.pending_games);
-  const dispatch = useDispatch<Dispatch>();
+  const params = useParams();
+  const { player } = useSelector<State, PlayerState>((state) => state.player);
+  const ongoing_games = useSelector<State, OngoingGamesState>(
+    (state) => state.ongoing_games
+  );
+  const id = params.id!;
+  const game = useSelector<State, IndexedUnoSpecs | undefined>((state) =>
+    pending.game(id, state.pending_games)
+  );
   const navigate = useNavigate();
-
-  const game = pendingGames.find((g) => g.id === id);
+  const dispatch: Dispatch = useDispatch();
 
   useEffect(() => {
-    if (!player) {
-      navigate("/");
+    if (player === undefined) {
+      navigate(`/login?pending=${id}`);
+    } else if (game === undefined) {
+      if (ongoing_games.some((g) => g.id === id)) navigate(`/game/${id}`);
+      else navigate("/");
     }
-  }, [player, navigate]);
+  });
 
-  if (!game) {
-    return (
-      <div style={{ padding: "2rem" }}>
-        <h1>Game Not Found</h1>
-        <button onClick={() => navigate("/lobby")}>Back to Lobby</button>
-      </div>
-    );
-  }
+  if (player === undefined || game === undefined) return <></>;
 
-  const handleJoin = async () => {
-    if (player) {
-      await dispatch(JoinThunk(game, player));
-    }
+  const canJoin = !game.players.some(_.equals(player));
+
+  const join = () => {
+    if (canJoin) dispatch(JoinThunk(game, player));
   };
 
-  const isPlayerInGame = game.players.includes(player || "");
-
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Pending Game {game.id}</h1>
-      <div style={{ marginBottom: "1rem" }}>
-        <p>
-          <strong>Players:</strong> {game.players.length} /{" "}
-          {game.numberOfPlayers}
-        </p>
-        <ul>
-          {game.players.map((p) => (
-            <li key={p}>{p}</li>
-          ))}
-        </ul>
+    <Page>
+      <h1>Game #{id}</h1>
+      <div>Created by: {game?.creator}</div>
+      <div>Players: {game?.players.join(", ")}</div>
+      <div>
+        Available Seats:{" "}
+        {(game?.numberOfPlayers ?? 2) - (game?.players.length ?? 0)}
       </div>
-      <div style={{ marginBottom: "1rem" }}>
-        <p>
-          <strong>Target Score:</strong> {game.targetScore}
-        </p>
-      </div>
-      {!isPlayerInGame && (
-        <button
-          onClick={handleJoin}
-          style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
-        >
-          Join Game
-        </button>
-      )}
-      <button
-        onClick={() => navigate("/lobby")}
-        style={{ padding: "0.5rem 1rem" }}
-      >
-        Back to Lobby
-      </button>
-      {isPlayerInGame && (
-        <p style={{ marginTop: "1rem", color: "green" }}>
-          Waiting for more players to join...
-        </p>
-      )}
-    </div>
+      {canJoin && <button onClick={join}>Join</button>}
+    </Page>
   );
 }

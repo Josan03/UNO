@@ -258,7 +258,6 @@ export async function join_game(
             creator
             players
             numberOfPlayers
-            targetScore
           }
           ... on ActiveGame {
             ...GameFields
