@@ -1,24 +1,22 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Room } from '@/lib/rooms'
+import { useAppState, useAppDispatch } from '@/store/hooks'
 
 export function useRoomManagement() {
-    const [loading, setLoading] = useState(false)
-    const [room, setRoom] = useState<Room | null>(null)
-    const [playerId, setPlayerId] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
+    const state = useAppState()
+    const dispatch = useAppDispatch()
+    const { room, playerId, loading, error } = state.room
     const router = useRouter()
 
     const createRoom = async (playerName: string, maxPlayers: number) => {
         if (!playerName.trim()) {
-            setError('Please enter your name')
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: 'Please enter your name' } })
             return false
         }
 
-        setLoading(true)
-        setError(null)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
+        dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: null } })
 
         try {
             const response = await fetch('/api/room/create', {
@@ -33,30 +31,30 @@ export function useRoomManagement() {
             }
 
             const data = await response.json()
-            setRoom(data.room)
-            setPlayerId(data.playerId)
+            dispatch({ type: 'room', action: { type: 'SET_ROOM', payload: data.room } })
+            dispatch({ type: 'room', action: { type: 'SET_PLAYER_ID', payload: data.playerId } })
             return true
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create room')
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Failed to create room' } })
             return false
         } finally {
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
     const joinRoom = async (playerName: string, roomCode: string) => {
         if (!playerName.trim()) {
-            setError('Please enter your name')
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: 'Please enter your name' } })
             return false
         }
 
         if (!roomCode.trim()) {
-            setError('Please enter room code')
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: 'Please enter room code' } })
             return false
         }
 
-        setLoading(true)
-        setError(null)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
+        dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: null } })
 
         try {
             const response = await fetch('/api/room/join', {
@@ -71,24 +69,24 @@ export function useRoomManagement() {
             }
 
             const data = await response.json()
-            setRoom(data.room)
-            setPlayerId(data.playerId)
+            dispatch({ type: 'room', action: { type: 'SET_ROOM', payload: data.room } })
+            dispatch({ type: 'room', action: { type: 'SET_PLAYER_ID', payload: data.playerId } })
             return true
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to join room')
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Failed to join room' } })
             return false
         } finally {
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
     const toggleReady = async () => {
         if (!room || !playerId) return
 
-        const player = room.players.find(p => p.id === playerId)
+        const player = room.players.find((p: { id: string }) => p.id === playerId)
         if (!player) return
 
-        setLoading(true)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
         try {
             const response = await fetch(`/api/room/${room.code}`, {
                 method: 'PATCH',
@@ -98,19 +96,19 @@ export function useRoomManagement() {
 
             if (response.ok) {
                 const data = await response.json()
-                setRoom(data.room)
+                dispatch({ type: 'room', action: { type: 'SET_ROOM', payload: data.room } })
             }
         } catch (err) {
             console.error('Error toggling ready:', err)
         } finally {
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
     const addBot = async () => {
         if (!room) return
 
-        setLoading(true)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
         try {
             const response = await fetch(`/api/room/${room.code}`, {
                 method: 'PATCH',
@@ -120,19 +118,19 @@ export function useRoomManagement() {
 
             if (response.ok) {
                 const data = await response.json()
-                setRoom(data.room)
+                dispatch({ type: 'room', action: { type: 'SET_ROOM', payload: data.room } })
             }
         } catch (err) {
             console.error('Error adding bot:', err)
         } finally {
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
     const removeBot = async (botId: string) => {
         if (!room) return
 
-        setLoading(true)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
         try {
             const response = await fetch(`/api/room/${room.code}`, {
                 method: 'PATCH',
@@ -142,19 +140,19 @@ export function useRoomManagement() {
 
             if (response.ok) {
                 const data = await response.json()
-                setRoom(data.room)
+                dispatch({ type: 'room', action: { type: 'SET_ROOM', payload: data.room } })
             }
         } catch (err) {
             console.error('Error removing bot:', err)
         } finally {
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
     const startGame = async () => {
         if (!room) return
 
-        setLoading(true)
+        dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: true } })
         try {
             const response = await fetch('/api/room/start', {
                 method: 'POST',
@@ -170,8 +168,8 @@ export function useRoomManagement() {
             const data = await response.json()
             router.push(`/game/${data.sessionId}?roomCode=${data.room.code}&playerId=${playerId}`)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to start game')
-            setLoading(false)
+            dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Failed to start game' } })
+            dispatch({ type: 'room', action: { type: 'SET_LOADING', payload: false } })
         }
     }
 
@@ -180,8 +178,6 @@ export function useRoomManagement() {
         room,
         playerId,
         error,
-        setRoom,
-        setError,
         createRoom,
         joinRoom,
         toggleReady,

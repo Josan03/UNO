@@ -1,18 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Card, Color } from '@/lib/game/deck'
+import { useEffect, useCallback } from 'react'
+import { useAppState, useAppDispatch } from '@/store/hooks'
 import { executeBotPlay } from '@/lib/game/botPlayer'
-
-interface RoundState {
-    players: string[]
-    playerInTurn: number | undefined
-    currentColor: Color
-    currentDirection: 'clockwise' | 'counterclockwise'
-    hands: Card[][]
-    discardPile: Card[]
-    drawPileCount: number
-}
 
 export function useGameState(
     sessionId: string | null,
@@ -20,11 +10,15 @@ export function useGameState(
     roomCode: string | null,
     onGameEnd: () => void
 ) {
-    const [roundState, setRoundState] = useState<RoundState | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const state = useAppState()
+    const dispatch = useAppDispatch()
+    const { roundState, loading, error } = state.game
 
-    const botPlay = useCallback((currentState: RoundState) => {
+    const updateRoundState = useCallback((newState: any) => {
+        dispatch({ type: 'game', action: { type: 'SET_ROUND_STATE', payload: newState } })
+    }, [dispatch])
+
+    const botPlay = useCallback((currentState: any) => {
         if (!sessionId) return
 
         executeBotPlay(
@@ -32,11 +26,11 @@ export function useGameState(
             currentState,
             isMultiplayer,
             roomCode,
-            setRoundState,
+            updateRoundState,
             onGameEnd,
             (state) => setTimeout(() => botPlay(state), 1000)
         )
-    }, [sessionId, isMultiplayer, roomCode, onGameEnd])
+    }, [sessionId, isMultiplayer, roomCode, onGameEnd, updateRoundState])
 
     // Fetch initial game state
     useEffect(() => {
@@ -49,21 +43,21 @@ export function useGameState(
                     throw new Error('Game not found')
                 }
                 const data = await response.json()
-                setRoundState(data.round)
-                setLoading(false)
+                dispatch({ type: 'game', action: { type: 'SET_ROUND_STATE', payload: data.round } })
+                dispatch({ type: 'game', action: { type: 'SET_LOADING', payload: false } })
 
                 // If it's a bot's turn, trigger bot play
                 if (!isMultiplayer && data.round.playerInTurn !== undefined && data.round.playerInTurn !== 0) {
                     setTimeout(() => botPlay(data.round), 1000)
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load game')
-                setLoading(false)
+                dispatch({ type: 'game', action: { type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Failed to load game' } })
+                dispatch({ type: 'game', action: { type: 'SET_LOADING', payload: false } })
             }
         }
 
         fetchGameState()
-    }, [sessionId, isMultiplayer, botPlay])
+    }, [sessionId, isMultiplayer, botPlay, dispatch])
 
     // Poll for game state in multiplayer
     useEffect(() => {
@@ -74,7 +68,7 @@ export function useGameState(
                 const response = await fetch(`/api/state/${sessionId}`)
                 if (response.ok) {
                     const data = await response.json()
-                    setRoundState(data.round)
+                    dispatch({ type: 'game', action: { type: 'SET_ROUND_STATE', payload: data.round } })
 
                     // Check if game ended
                     if (data.round.playerInTurn === undefined) {
@@ -87,7 +81,7 @@ export function useGameState(
         }, 3000)
 
         return () => clearInterval(interval)
-    }, [sessionId, isMultiplayer])
+    }, [sessionId, isMultiplayer, dispatch])
 
-    return { roundState, setRoundState, loading, error, botPlay }
+    return { roundState, updateRoundState, loading, error, botPlay }
 }

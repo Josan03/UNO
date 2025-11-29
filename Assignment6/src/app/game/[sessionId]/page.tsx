@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from 'react'
 import { Toaster } from 'react-hot-toast'
+import { useAppState, useAppDispatch } from '@/store/hooks'
 import TopBar from '@/components/game/TopBar'
 import GameBoard from '@/components/game/GameBoard'
 import { useGameSession } from '@/hooks/useGameSession'
@@ -10,9 +11,13 @@ import { useCardActions } from '@/hooks/useCardActions'
 import { Color } from '@/lib/game/deck'
 
 export default function GamePage({ params }: { params: Promise<{ sessionId: string }> }) {
+    const state = useAppState()
+    const dispatch = useAppDispatch()
+    const { roundState, loading, error } = state.game
+
     const {
         sessionId,
-        setSessionId,
+        setSessionId: setLocalSessionId,
         myPlayerIndex,
         setMyPlayerIndex,
         roomCode,
@@ -24,7 +29,9 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
     // Unwrap params and determine player index
     useEffect(() => {
         params.then(async (p) => {
-            setSessionId(p.sessionId)
+            setLocalSessionId(p.sessionId)
+            dispatch({ type: 'game', action: { type: 'SET_SESSION_ID', payload: p.sessionId } })
+            dispatch({ type: 'game', action: { type: 'SET_GAME_MODE', payload: { isMultiplayer, roomCode } } })
 
             // If multiplayer, fetch room to get player index
             if (isMultiplayer && roomCode && playerId) {
@@ -42,13 +49,13 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
                 }
             }
         })
-    }, [params, isMultiplayer, roomCode, playerId, setSessionId, setMyPlayerIndex])
+    }, [params, isMultiplayer, roomCode, playerId, setLocalSessionId, setMyPlayerIndex, dispatch])
 
     const handleGameEnd = useCallback(() => {
         router.push('/')
     }, [router])
 
-    const { roundState, setRoundState, loading, error, botPlay } = useGameState(
+    const { updateRoundState, botPlay } = useGameState(
         sessionId,
         isMultiplayer,
         roomCode,
@@ -66,12 +73,12 @@ export default function GamePage({ params }: { params: Promise<{ sessionId: stri
 
     const onPlayCard = async (cardIndex: number, namedColor?: Color) => {
         const newState = await handlePlayCard(cardIndex, namedColor)
-        if (newState) setRoundState(newState)
+        if (newState) updateRoundState(newState)
     }
 
     const onDrawCard = async () => {
         const newState = await handleDrawCard()
-        if (newState) setRoundState(newState)
+        if (newState) updateRoundState(newState)
     }
 
     if (loading) {

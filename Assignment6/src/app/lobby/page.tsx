@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAppDispatch } from '@/store/hooks'
 import LobbyMenu from '@/components/lobby/LobbyMenu'
 import SinglePlayerSetup from '@/components/lobby/SinglePlayerSetup'
 import CreateRoom from '@/components/lobby/CreateRoom'
@@ -19,14 +20,13 @@ export default function Lobby() {
     const [roomCode, setRoomCode] = useState('')
     const [maxPlayers, setMaxPlayers] = useState(4)
     const router = useRouter()
+    const dispatch = useAppDispatch()
 
     const {
         loading: roomLoading,
         room,
         playerId,
         error: roomError,
-        setRoom,
-        setError: setRoomError,
         createRoom,
         joinRoom,
         toggleReady,
@@ -44,7 +44,7 @@ export default function Lobby() {
         startGame: startSinglePlayer
     } = useSinglePlayerGame()
 
-    useRoomPolling(mode, room, playerId, setRoom)
+    useRoomPolling(mode, room, playerId)
 
     const handleCreateRoom = async () => {
         const success = await createRoom(playerName, maxPlayers)
@@ -96,7 +96,7 @@ export default function Lobby() {
                 onCreate={handleCreateRoom}
                 onBack={() => {
                     setMode('menu')
-                    setRoomError(null)
+                    dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: null } })
                 }}
             />
         )
@@ -115,7 +115,7 @@ export default function Lobby() {
                 onJoin={handleJoinRoom}
                 onBack={() => {
                     setMode('menu')
-                    setRoomError(null)
+                    dispatch({ type: 'room', action: { type: 'SET_ERROR', payload: null } })
                 }}
             />
         )
