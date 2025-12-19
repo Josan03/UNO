@@ -1,7 +1,9 @@
+'use client'
+
 import { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../store'
-import { setPlayerName } from '../store/gameSlice'
-import { wsConnect, wsSend } from '../store/websocketMiddleware'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { setPlayerName } from '@/store/gameSlice'
+import { wsConnect, wsSend } from '@/store/websocketMiddleware'
 
 export function Home() {
     const dispatch = useAppDispatch()
@@ -16,7 +18,9 @@ export function Home() {
         dispatch(setPlayerName(name.trim()))
 
         if (connectionStatus !== 'connected') {
-            const wsUrl = `ws://${window.location.hostname}:3001`
+            const wsUrl = typeof window !== 'undefined' 
+                ? `ws://${window.location.hostname}:3001`
+                : 'ws://localhost:3001'
             dispatch(wsConnect(wsUrl))
         }
 
@@ -32,7 +36,9 @@ export function Home() {
         dispatch(setPlayerName(name.trim()))
 
         if (connectionStatus !== 'connected') {
-            const wsUrl = `ws://${window.location.hostname}:3001`
+            const wsUrl = typeof window !== 'undefined'
+                ? `ws://${window.location.hostname}:3001`
+                : 'ws://localhost:3001'
             dispatch(wsConnect(wsUrl))
         }
 

@@ -1,3 +1,5 @@
+'use client'
+
 import { Middleware } from '@reduxjs/toolkit'
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket'
 import { timer } from 'rxjs'

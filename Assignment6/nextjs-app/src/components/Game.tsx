@@ -1,6 +1,8 @@
+﻿'use client'
+
 import { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../store'
-import { wsSend } from '../store/websocketMiddleware'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { wsSend } from '@/store/websocketMiddleware'
 import { UnoCard } from './UnoCard'
 import { ColorPicker } from './ColorPicker'
 import { GameHistory } from './GameHistory'
@@ -119,7 +121,7 @@ export function Game() {
                             <>
                                 <span className={`w-3 h-3 rounded-full ${game.players[game.round.playerInTurn ?? 0]?.isBot ? 'bg-purple-400 animate-pulse' : 'bg-white/40'}`} />
                                 <span className="text-white/60">
-                                    {game.players[game.round.playerInTurn ?? 0]?.isBot ? '🤖 ' : ''}
+                                    {game.players[game.round.playerInTurn ?? 0]?.isBot ? 'ðŸ¤– ' : ''}
                                     {game.players[game.round.playerInTurn ?? 0]?.name}'s turn
                                     {game.players[game.round.playerInTurn ?? 0]?.isBot ? ' (thinking...)' : ''}
                                 </span>
@@ -149,7 +151,7 @@ export function Game() {
                                         : player.isBot
                                             ? 'bg-gradient-to-br from-purple-500 to-violet-600 text-white'
                                             : 'bg-white/10 text-white/70'}`}>
-                                    {player.isBot ? '🤖' : player.name.charAt(0).toUpperCase()}
+                                    {player.isBot ? 'ðŸ¤–' : player.name.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="text-white font-medium text-sm truncate flex-1">
                                     {player.name}
@@ -158,12 +160,12 @@ export function Game() {
                                     <span className="text-purple-400 text-xs" title="Bot">BOT</span>
                                 )}
                                 {!player.isConnected && !player.isBot && (
-                                    <span className="text-red-400 text-xs" title="Disconnected">⚠️</span>
+                                    <span className="text-red-400 text-xs" title="Disconnected">âš ï¸</span>
                                 )}
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-xl">🃏</span>
+                                    <span className="text-xl">ðŸƒ</span>
                                     <span className="text-white font-bold">{player.cardCount}</span>
                                 </div>
                                 {hasUno && !gameEnded && !player.isBot && (
@@ -234,7 +236,7 @@ export function Game() {
                             <div className={`w-16 h-16 rounded-full bg-white/10 flex items-center justify-center
                                 border border-white/20`}>
                                 <span className="text-4xl text-white/60">
-                                    {game.round.currentDirection === 'clockwise' ? '↻' : '↺'}
+                                    {game.round.currentDirection === 'clockwise' ? 'â†»' : 'â†º'}
                                 </span>
                             </div>
                             <p className="text-white/40 text-xs mt-2">
@@ -275,7 +277,7 @@ export function Game() {
                                     : 'bg-gradient-to-r from-uno-red to-red-600 text-white hover:shadow-glow-red animate-bounce'
                                     }`}
                             >
-                                {alreadyCalledUno ? 'UNO! ✓' : 'UNO!'}
+                                {alreadyCalledUno ? 'UNO! âœ“' : 'UNO!'}
                             </button>
                         )
                     })()}
@@ -301,3 +303,4 @@ export function Game() {
         </div>
     )
 }
+

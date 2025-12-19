@@ -1,5 +1,7 @@
-import { useAppSelector } from '../store'
-import { HistoryEntry } from '../store/gameSlice'
+﻿'use client'
+
+import { useAppSelector } from '@/store/hooks'
+import { HistoryEntry } from '@/store/gameSlice'
 import { Color } from '@shared/model/deck'
 
 function getCardDisplay(entry: HistoryEntry): string {
@@ -36,11 +38,11 @@ function getColorDot(color?: Color): string {
 
 function getEntryIcon(type: string): string {
     switch (type) {
-        case 'CARD_PLAYED': return '🎴'
-        case 'CARD_DRAWN': return '📥'
-        case 'UNO_CALLED': return '🔔'
-        case 'UNO_CAUGHT': return '🚨'
-        default: return '•'
+        case 'CARD_PLAYED': return 'ðŸŽ´'
+        case 'CARD_DRAWN': return 'ðŸ“¥'
+        case 'UNO_CALLED': return 'ðŸ””'
+        case 'UNO_CAUGHT': return 'ðŸš¨'
+        default: return 'â€¢'
     }
 }
 
@@ -54,7 +56,7 @@ export function GameHistory() {
     return (
         <div className="glass-dark rounded-2xl p-4 w-72">
             <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">📜</span>
+                <span className="text-lg">ðŸ“œ</span>
                 <h3 className="text-white/70 text-sm font-semibold tracking-wide">GAME LOG</h3>
             </div>
 
@@ -85,7 +87,7 @@ export function GameHistory() {
                                     <div className="flex items-center gap-2">
                                         <span className={`font-semibold text-sm truncate ${isMyAction ? 'text-uno-blue' : isBot ? 'text-purple-400' : 'text-white/80'
                                             }`}>
-                                            {isMyAction ? 'You' : isBot ? `🤖 ${entry.playerName}` : entry.playerName}
+                                            {isMyAction ? 'You' : isBot ? `ðŸ¤– ${entry.playerName}` : entry.playerName}
                                         </span>
                                         {entry.type === 'CARD_PLAYED' && cardColor && (
                                             <span className={`w-2.5 h-2.5 rounded-full ${getColorDot(cardColor)}`} />
@@ -106,3 +108,4 @@ export function GameHistory() {
         </div>
     )
 }
+

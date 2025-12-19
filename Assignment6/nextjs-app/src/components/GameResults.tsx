@@ -1,5 +1,7 @@
-import { useAppDispatch, useAppSelector } from '../store'
-import { wsSend } from '../store/websocketMiddleware'
+﻿'use client'
+
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { wsSend } from '@/store/websocketMiddleware'
 import { PublicPlayerState } from '@shared/protocol'
 
 interface GameResultsProps {
@@ -28,7 +30,7 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
                 {/* Winner Section */}
                 <div className="text-center mb-8">
                     <div className={`text-7xl mb-4 ${isWinner ? 'animate-bounce' : ''}`}>
-                        {isWinner ? '🏆' : '🎮'}
+                        {isWinner ? 'ðŸ†' : 'ðŸŽ®'}
                     </div>
                     <h2 className={`text-4xl font-black mb-2 ${isWinner
                         ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600'
@@ -46,7 +48,7 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
                 {/* Results Table */}
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="text-lg">📊</span>
+                        <span className="text-lg">ðŸ“Š</span>
                         <h3 className="text-white/70 text-sm font-semibold tracking-wide">FINAL STANDINGS</h3>
                     </div>
 
@@ -77,7 +79,7 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
                                                     ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
                                                     : 'bg-white/10 text-white/50'
                                         }`}>
-                                        {position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : position}
+                                        {position === 1 ? 'ðŸ¥‡' : position === 2 ? 'ðŸ¥ˆ' : position === 3 ? 'ðŸ¥‰' : position}
                                     </div>
 
                                     {/* Player Info */}
@@ -85,7 +87,7 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
                                         <div className="flex items-center gap-2">
                                             <span className={`font-bold truncate ${isPlayerWinner ? 'text-yellow-400' : isMe ? 'text-uno-blue' : 'text-white'
                                                 }`}>
-                                                {player.isBot ? '🤖 ' : ''}{player.name}
+                                                {player.isBot ? 'ðŸ¤– ' : ''}{player.name}
                                             </span>
                                             {isMe && (
                                                 <span className="text-uno-blue text-xs">(You)</span>
@@ -128,3 +130,4 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
         </div>
     )
 }
+

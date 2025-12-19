@@ -1,6 +1,8 @@
+﻿'use client'
+
 import { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../store'
-import { wsSend } from '../store/websocketMiddleware'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { wsSend } from '@/store/websocketMiddleware'
 
 export function Lobby() {
     const dispatch = useAppDispatch()
@@ -106,9 +108,9 @@ export function Lobby() {
                                                 ? 'bg-gradient-to-br from-purple-500 to-violet-600'
                                                 : 'bg-gradient-to-br from-gray-500 to-gray-700'}`}>
                                         {isHostPlayer ? (
-                                            <span className="text-lg">👑</span>
+                                            <span className="text-lg">ðŸ‘‘</span>
                                         ) : isBotPlayer ? (
-                                            <span className="text-lg">🤖</span>
+                                            <span className="text-lg">ðŸ¤–</span>
                                         ) : (
                                             <span className="text-white font-bold">{player.charAt(0).toUpperCase()}</span>
                                         )}
@@ -166,7 +168,7 @@ export function Lobby() {
                                     className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 
                                         transition-all duration-200 text-sm font-medium flex items-center gap-2"
                                 >
-                                    <span>🤖</span>
+                                    <span>ðŸ¤–</span>
                                     <span>Easy</span>
                                 </button>
                                 <button
@@ -174,7 +176,7 @@ export function Lobby() {
                                     className="px-4 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 
                                         transition-all duration-200 text-sm font-medium flex items-center gap-2"
                                 >
-                                    <span>🤖</span>
+                                    <span>ðŸ¤–</span>
                                     <span>Medium</span>
                                 </button>
                                 <button
@@ -182,7 +184,7 @@ export function Lobby() {
                                     className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 
                                         transition-all duration-200 text-sm font-medium flex items-center gap-2"
                                 >
-                                    <span>🤖</span>
+                                    <span>ðŸ¤–</span>
                                     <span>Hard</span>
                                 </button>
                             </div>
@@ -222,3 +224,4 @@ export function Lobby() {
         </div>
     )
 }
+

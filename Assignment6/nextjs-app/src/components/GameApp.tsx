@@ -1,9 +1,11 @@
-import { useAppSelector } from './store'
-import { Lobby } from './components/Lobby'
-import { Game } from './components/Game'
-import { Home } from './components/Home'
+'use client'
 
-function App() {
+import { useAppSelector } from '@/store/hooks'
+import { Lobby } from '@/components/Lobby'
+import { Game } from '@/components/Game'
+import { Home } from '@/components/Home'
+
+export default function GameApp() {
     const { lobby, game } = useAppSelector((state) => state.game)
 
     // In game (winner modal is shown inside Game component)
@@ -19,5 +21,3 @@ function App() {
     // Home/Connect screen
     return <Home />
 }
-
-export default App
