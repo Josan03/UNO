@@ -37,7 +37,7 @@ export default function Pending() {
   const canJoin = !game.players.some(_.equals(player));
 
   const join = () => {
-    if (canJoin) dispatch(JoinThunk(game, player));
+    if (canJoin) dispatch(JoinThunk(game, player, navigate));
   };
 
   return (

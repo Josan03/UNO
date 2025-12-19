@@ -7,7 +7,12 @@ export default (
   navigate: NavigateFunction
 ) => {
   return async () => {
-    const game = await create_game(number_of_players, player);
-    navigate(`/pending/${game.id}`);
+    try {
+      const game = await create_game(number_of_players, player);
+      navigate(`/pending/${game.id}`);
+    } catch (error) {
+      console.error("Failed to create game:", error);
+      alert("Failed to create game. Please check the server connection.");
+    }
   };
 };

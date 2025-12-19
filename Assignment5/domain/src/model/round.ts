@@ -39,7 +39,7 @@ export const canPlay = (cardIndex: number, round: Round): boolean => {
   const topCard = topOfDiscard(round);
   const currentColor = round.currentColor;
 
-  if (cardToPlay.type === "WILD DRAW") {
+  if (cardToPlay.type === "WILD_DRAW") {
     if (topCard.type === "DRAW") return true;
 
     const hasMatchingColorCard = round.hands[round.playerInTurn].some(
@@ -48,7 +48,7 @@ export const canPlay = (cardIndex: number, round: Round): boolean => {
     if (hasMatchingColorCard) return false;
   }
 
-  if (cardToPlay.type === "WILD" || cardToPlay.type === "WILD DRAW")
+  if (cardToPlay.type === "WILD" || cardToPlay.type === "WILD_DRAW")
     return true;
 
   if (cardToPlay.type === "NUMBERED" && topCard.type === "NUMBERED")
@@ -154,7 +154,7 @@ export const play = (
 
   const cardToPlay = round.hands[round.playerInTurn][cardIndex];
 
-  if (cardToPlay.type === "WILD" || cardToPlay.type === "WILD DRAW") {
+  if (cardToPlay.type === "WILD" || cardToPlay.type === "WILD_DRAW") {
     if (!namedColor) throw new Error("Error: must specify color for wild card");
   } else if (!canPlay(cardIndex, round)) {
     throw new Error(`Error: illegal play`);
@@ -214,7 +214,7 @@ export const play = (
       }
       updatePlayerTurn(newRound); // Skip the player which has drawn 2 cards
       break;
-    case "WILD DRAW":
+    case "WILD_DRAW":
       newRound.currentColor = namedColor!;
       updatePlayerTurn(newRound); // Move to the next player
       const drawPlayer2 = newRound.playerInTurn;
@@ -313,7 +313,7 @@ export const score = (round: Round): number | undefined => {
         totalScore += card.number!;
       } else if (["SKIP", "REVERSE", "DRAW"].includes(card.type)) {
         totalScore += 20;
-      } else if (card.type === "WILD" || card.type === "WILD DRAW") {
+      } else if (card.type === "WILD" || card.type === "WILD_DRAW") {
         totalScore += 50;
       }
     });
@@ -347,7 +347,7 @@ export const createRound = (
   let topCard = discardPile[0];
 
   const reshuffleIfWildCard = (topCard: Card): Deck => {
-    if (topCard.type === "WILD" || topCard.type === "WILD DRAW") {
+    if (topCard.type === "WILD" || topCard.type === "WILD_DRAW") {
       let reshuffledDeck = shuffler(drawPile);
       discardPile[0] = reshuffledDeck[0];
       return reshuffledDeck.slice(1);

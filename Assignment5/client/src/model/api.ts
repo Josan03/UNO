@@ -143,7 +143,6 @@ export async function pendingRxJS() {
         creator
         players
         numberOfPlayers
-        targetScore
       }
     }
   `;

@@ -65,6 +65,7 @@ async function startServer(store: GameStore) {
 
     const wsServer = new WebSocketServer({
       server: httpServer,
+      path: "/graphql",
     });
 
     const subscriptionServer = useServer({ schema }, wsServer);
