@@ -39,7 +39,7 @@ export function Lobby() {
 
                 <div className="bg-white/5 rounded-xl p-4 mb-6">
                     <div className="text-white/60 text-sm mb-2">
-                        Players ({lobby.players.length}/10)
+                        Players ({lobby.players.length}/{lobby.maxPlayers})
                     </div>
 
                     <div className="space-y-2">

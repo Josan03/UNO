@@ -7,7 +7,7 @@ import { Direction } from './model/round'
 
 export type ClientMessage =
     | { type: 'JOIN_LOBBY'; payload: { playerName: string; lobbyId?: string } }
-    | { type: 'CREATE_LOBBY'; payload: { playerName: string } }
+    | { type: 'CREATE_LOBBY'; payload: { playerName: string; maxPlayers: number } }
     | { type: 'START_GAME'; payload: {} }
     | { type: 'PLAY_CARD'; payload: { cardIndex: number; namedColor?: Color } }
     | { type: 'DRAW_CARD'; payload: {} }
@@ -41,6 +41,7 @@ export interface LobbyState {
     lobbyId: string
     players: string[]
     hostIndex: number
+    maxPlayers: number
     isStarted: boolean
 }
 

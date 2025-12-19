@@ -27,6 +27,7 @@ export interface Lobby {
     id: string
     players: PlayerConnection[]
     hostIndex: number
+    maxPlayers: number
     game: Game | null
 }
 
@@ -201,7 +202,7 @@ export class GameServer {
     // Lobby Handlers
     // ============================================
 
-    private handleCreateLobby(playerId: string, payload: { playerName: string }): void {
+    private handleCreateLobby(playerId: string, payload: { playerName: string; maxPlayers: number }): void {
         const lobbyId = uuidv4().substring(0, 8).toUpperCase()
 
         const playerConnection = this.findOrCreatePlayer(playerId, payload.playerName)
@@ -210,6 +211,7 @@ export class GameServer {
             id: lobbyId,
             players: [playerConnection],
             hostIndex: 0,
+            maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 10), // Clamp between 2-10
             game: null
         }
 
@@ -230,7 +232,7 @@ export class GameServer {
         } else {
             // Find any open lobby
             for (const [, l] of this.lobbies) {
-                if (!l.game && l.players.length < 10) {
+                if (!l.game && l.players.length < l.maxPlayers) {
                     lobby = l
                     break
                 }
@@ -249,7 +251,7 @@ export class GameServer {
             return
         }
 
-        if (lobby.players.length >= 10) {
+        if (lobby.players.length >= lobby.maxPlayers) {
             const player = this.findOrCreatePlayer(playerId, payload.playerName)
             player.send({ type: 'ERROR', payload: { message: 'Lobby is full' } })
             return
@@ -472,6 +474,7 @@ export class GameServer {
             lobbyId: lobby.id,
             players: lobby.players.map(p => p.playerName),
             hostIndex: lobby.hostIndex,
+            maxPlayers: lobby.maxPlayers,
             isStarted: lobby.game !== null
         }
     }

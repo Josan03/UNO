@@ -218,15 +218,21 @@ export function Game() {
                     <span className="text-white font-medium">
                         Your Hand ({game.hand.length} cards)
                     </span>
-                    {game.hand.length <= 2 && !gameEnded && (
-                        <button
-                            onClick={handleSayUno}
-                            className="bg-uno-red text-white px-4 py-2 rounded-lg font-bold
-                       hover:bg-red-700 transition-colors animate-bounce"
-                        >
-                            UNO!
-                        </button>
-                    )}
+                    {game.hand.length <= 2 && !gameEnded && (() => {
+                        const alreadyCalledUno = game.round?.unoCalledBy.includes(game.playerIndex) ?? false
+                        return (
+                            <button
+                                onClick={handleSayUno}
+                                disabled={alreadyCalledUno}
+                                className={`px-4 py-2 rounded-lg font-bold transition-colors ${alreadyCalledUno
+                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                        : 'bg-uno-red text-white hover:bg-red-700 animate-bounce'
+                                    }`}
+                            >
+                                {alreadyCalledUno ? 'UNO! ✓' : 'UNO!'}
+                            </button>
+                        )
+                    })()}
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-2">

@@ -8,6 +8,7 @@ export function Home() {
     const { connectionStatus, playerName } = useAppSelector((state) => state.game)
     const [name, setName] = useState(playerName || '')
     const [lobbyCode, setLobbyCode] = useState('')
+    const [maxPlayers, setMaxPlayers] = useState(4)
 
     const handleCreateLobby = () => {
         if (!name.trim()) return
@@ -22,7 +23,7 @@ export function Home() {
         // Message will be queued if not yet connected
         dispatch(wsSend({
             type: 'CREATE_LOBBY',
-            payload: { playerName: name.trim() }
+            payload: { playerName: name.trim(), maxPlayers }
         }))
     }
 
@@ -60,6 +61,21 @@ export function Home() {
                             className="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-white/40 
                          border border-white/20 focus:border-white/40 focus:outline-none"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-white/80 text-sm mb-1">Number of Players</label>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="range"
+                                min="2"
+                                max="10"
+                                value={maxPlayers}
+                                onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                                className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-white font-bold w-8 text-center">{maxPlayers}</span>
+                        </div>
                     </div>
 
                     <button
