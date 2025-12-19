@@ -73,10 +73,12 @@ export const gameSlice = createSlice({
                     state.game = message.payload
                     state.lobby = null
                     state.gameHistory = [] // Clear history on new game
+                    state.lastEvent = null // Reset lastEvent on new game
                     break
                 case 'GAME_STATE':
                     state.game = message.payload
                     state.lobby = null
+                    // Don't clear lastEvent if game ended - preserve GAME_ENDED event
                     break
                 case 'CARD_PLAYED': {
                     state.lastEvent = { type: message.type, payload: message.payload }

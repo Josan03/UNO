@@ -9,22 +9,31 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "face-api.js": "^0.22.2",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.562.0",
+    "ogl": "^1.0.11",
+    "postprocessing": "^6.38.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@reduxjs/toolkit": "^2.0.1",
     "react-redux": "^9.0.4",
     "rxjs": "^7.8.1",
-    "lodash": "^4.17.21"
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.167.1"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.202",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
-    "@types/lodash": "^4.14.202",
     "@vitejs/plugin-react": "^4.2.1",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.10",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
   }
 }

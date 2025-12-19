@@ -13,8 +13,17 @@ export function Game() {
     const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
     const [showColorPicker, setShowColorPicker] = useState(false)
 
-    const gameEnded = lastEvent?.type === 'GAME_ENDED'
-    const winnerInfo = gameEnded ? lastEvent.payload : null
+    // Check for game end using both lastEvent and game.winner
+    const gameEndedByEvent = lastEvent?.type === 'GAME_ENDED'
+    const gameEndedByWinner = game?.winner !== undefined
+    const gameEnded = gameEndedByEvent || gameEndedByWinner
+
+    // Get winner info from lastEvent or construct from game state
+    const winnerInfo = gameEndedByEvent
+        ? lastEvent.payload
+        : gameEndedByWinner
+            ? { winner: game!.winner, winnerName: game!.players[game!.winner!]?.name ?? 'Unknown' }
+            : null
 
     if (!game) return null
 
@@ -63,17 +72,17 @@ export function Game() {
     }
 
     const currentColor = game.round?.currentColor ?? 'RED'
-    const colorGlow: Record<Color, string> = {
-        RED: 'shadow-[0_0_60px_rgba(237,28,36,0.4)]',
-        BLUE: 'shadow-[0_0_60px_rgba(0,114,188,0.4)]',
-        GREEN: 'shadow-[0_0_60px_rgba(0,166,81,0.4)]',
-        YELLOW: 'shadow-[0_0_60px_rgba(255,237,0,0.4)]'
+    const colorBorder: Record<Color, string> = {
+        RED: 'border-red-500/30',
+        BLUE: 'border-blue-500/30',
+        GREEN: 'border-green-500/30',
+        YELLOW: 'border-yellow-500/30'
     }
     const colorBg: Record<Color, string> = {
-        RED: 'from-uno-red/20',
-        BLUE: 'from-uno-blue/20',
-        GREEN: 'from-uno-green/20',
-        YELLOW: 'from-uno-yellow/20'
+        RED: 'from-red-500/10',
+        BLUE: 'from-blue-500/10',
+        GREEN: 'from-green-500/10',
+        YELLOW: 'from-yellow-500/10'
     }
 
     return (
@@ -184,10 +193,10 @@ export function Game() {
 
             {/* Game Table */}
             {game.round && (
-                <div className={`flex-1 flex items-center justify-center relative table-glow`}>
+                <div className={`flex-1 flex items-center justify-center relative`}>
                     <div className={`flex items-center justify-center gap-12 p-8 rounded-[40px] 
-                        bg-gradient-to-br ${colorBg[currentColor]} to-transparent
-                        ${colorGlow[currentColor]} transition-all duration-500`}>
+                        bg-gradient-to-br ${colorBg[currentColor]} to-black/40
+                        transition-all duration-500`}>
 
                         {/* Draw Pile */}
                         <div className="text-center">

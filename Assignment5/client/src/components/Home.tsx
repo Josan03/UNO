@@ -44,18 +44,6 @@ export function Home() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Decorative background cards */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-20 -left-20 w-40 h-56 bg-gradient-to-br from-uno-red to-red-700 
-                    rounded-2xl rotate-[-15deg] opacity-20 blur-sm" />
-                <div className="absolute top-40 -right-10 w-32 h-44 bg-gradient-to-br from-uno-blue to-blue-700 
-                    rounded-2xl rotate-[25deg] opacity-20 blur-sm" />
-                <div className="absolute -bottom-10 left-1/4 w-36 h-48 bg-gradient-to-br from-uno-green to-green-700 
-                    rounded-2xl rotate-[10deg] opacity-20 blur-sm" />
-                <div className="absolute bottom-40 right-1/4 w-28 h-40 bg-gradient-to-br from-uno-yellow to-yellow-600 
-                    rounded-2xl rotate-[-20deg] opacity-20 blur-sm" />
-            </div>
-
             <div className="glass rounded-3xl p-8 w-full max-w-md shadow-2xl relative z-10 animate-slide-up">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -97,8 +85,8 @@ export function Home() {
                                     onClick={() => setMaxPlayers(num)}
                                     className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all duration-200
                                         ${maxPlayers === num
-                                            ? 'bg-uno-blue text-white shadow-glow-blue'
-                                            : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border border-white/10'
+                                            ? 'bg-purple-600 text-white border-2 border-purple-400'
+                                            : 'bg-white/10 text-white/60 hover:bg-purple-500/20 hover:text-white border border-white/10'
                                         }`}
                                 >
                                     {num}
@@ -112,10 +100,11 @@ export function Home() {
                         onClick={handleCreateLobby}
                         disabled={!name.trim()}
                         className="w-full py-4 rounded-xl font-bold text-lg tracking-wide
-                            bg-gradient-to-r from-uno-red to-red-600 text-white
-                            hover:from-red-600 hover:to-red-700 hover:shadow-glow-red
-                            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none
-                            transition-all duration-300 transform hover:scale-[1.02]"
+                            bg-gradient-to-r from-cyan-500 to-teal-500 text-white
+                            hover:from-cyan-400 hover:to-teal-400
+                            disabled:opacity-40 disabled:cursor-not-allowed
+                            transition-all duration-300 transform hover:scale-[1.02]
+                            border border-cyan-400/30"
                     >
                         CREATE GAME
                     </button>
@@ -150,10 +139,11 @@ export function Home() {
                         onClick={handleJoinLobby}
                         disabled={!name.trim()}
                         className="w-full py-4 rounded-xl font-bold text-lg tracking-wide
-                            bg-gradient-to-r from-uno-blue to-blue-600 text-white
-                            hover:from-blue-600 hover:to-blue-700 hover:shadow-glow-blue
-                            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none
-                            transition-all duration-300 transform hover:scale-[1.02]"
+                            bg-gradient-to-r from-purple-600 to-violet-600 text-white
+                            hover:from-purple-500 hover:to-violet-500
+                            disabled:opacity-40 disabled:cursor-not-allowed
+                            transition-all duration-300 transform hover:scale-[1.02]
+                            border border-purple-400/30"
                     >
                         JOIN GAME
                     </button>
