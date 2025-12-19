@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 90">
+  <!-- Card background -->
+  <rect x="2" y="2" width="60" height="86" rx="6" fill="#e53935" stroke="#c62828" stroke-width="2"/>
+  
+  <!-- White ellipse center -->
+  <ellipse cx="32" cy="45" rx="22" ry="30" fill="white" transform="rotate(15 32 45)"/>
+  
+  <!-- Number 7 -->
+  <text x="32" y="55" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="32" font-weight="900" fill="#e53935">7</text>
+  
+  <!-- Corner numbers -->
+  <text x="10" y="18" font-family="Arial Black, sans-serif" font-size="12" font-weight="bold" fill="white">7</text>
+  <text x="54" y="82" font-family="Arial Black, sans-serif" font-size="12" font-weight="bold" fill="white" transform="rotate(180 54 76)">7</text>
+</svg>
