@@ -1,0 +1,90 @@
+enum Color { 
+    RED
+    YELLOW
+    GREEN
+    BLUE
+}
+
+enum Direction { 
+    CLOCKWISE
+    COUNTERCLOCKWISE
+}
+
+enum Type { 
+    NUMBERED
+    SKIP
+    REVERSE
+    DRAW
+    WILD
+    WILD_DRAW
+}
+
+type Numbered {
+    type: Type!
+    color: Color!
+    number: Int!
+}
+
+type ColoredAction {
+    type: Type!
+    color: Color!
+}
+
+type Wild {
+    type: Type!
+}
+
+union Card = Numbered | ColoredAction | Wild
+
+type Round {
+    players: [String!]!
+    hands: [[Card!]!]!
+    drawPile: [Card!]!
+    discardPile: [Card!]!
+    currentColor: Color!
+    currentDirection: Direction!
+    dealer: Int!
+    playerInTurn: Int!
+}
+
+type PendingGame {
+    id: ID!
+    pending: Boolean
+    creator: String!
+    numberOfPlayers: Int!
+    players: [String!]!
+}
+
+type ActiveGame {
+    id: ID!
+    pending: Boolean
+    cardsPerPlayer: Int!
+    players: [String!]!
+    targetScore: Int!
+    scores: [Int!]!
+    currentRound: Round
+}
+
+union Game = ActiveGame | PendingGame
+
+type Query {
+    games: [ActiveGame!]!
+    game(id: ID!): ActiveGame
+    pending_games: [PendingGame!]!
+    pending_game(id: ID!): PendingGame
+}
+
+type Mutation {
+    create_game(creator: String!, numberOfPlayers: Int!): Game!
+    join_game(id: ID!, player: String!): Game!
+    play_card(id: ID!, playerIndex: Int!, cardIndex: Int!, namedColor: Color): ActiveGame!
+    draw_card(id: ID!, playerIndex: Int!): ActiveGame!
+    pass_turn(id: ID!, playerIndex: Int!): ActiveGame!
+    say_uno(id: ID!, playerIndex: Int!): ActiveGame!
+    call_uno(id: ID!, accuserIndex: Int!, accusedIndex: Int!): ActiveGame!
+}
+
+type Subscription {
+    active: ActiveGame
+    pending: PendingGame
+}
