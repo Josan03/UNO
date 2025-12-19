@@ -112,19 +112,18 @@ export function UnoCard({ card, canPlay, onClick, size = 'medium', faceDown = fa
         >
             {/* White ellipse center */}
             <div className={`absolute ${config.ellipse} bg-white rounded-[45%] rotate-[30deg]
-                shadow-inner flex items-center justify-center`}>
+                shadow-inner flex items-center justify-center overflow-hidden`}>
                 {isWild ? (
-                    <div className="w-full h-full relative">
-                        {/* Wild card multi-color segments */}
-                        <div className="absolute inset-0 rounded-[45%] overflow-hidden rotate-[-30deg]">
+                    <div className="w-full h-full relative overflow-hidden rounded-[45%]">
+                        {/* Wild card multi-color segments - no counter-rotation needed since we clip */}
+                        <div className="absolute inset-0">
                             <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-uno-red" />
                             <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-uno-blue" />
                             <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-uno-yellow" />
                             <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-uno-green" />
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <span className={`${config.symbol} font-black text-white drop-shadow-lg
-                                ${card.type === 'WILD DRAW' ? '' : ''}`}>
+                            <span className={`${config.symbol} font-black text-white drop-shadow-lg rotate-[-30deg]`}>
                                 {symbol}
                             </span>
                         </div>
