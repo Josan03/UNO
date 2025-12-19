@@ -1,3 +1,5 @@
+'use client'
+
 import { Color } from '@shared/model/deck'
 
 interface ColorPickerProps {
