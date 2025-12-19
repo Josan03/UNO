@@ -52,9 +52,9 @@ export type API = {
   game: (id: string) => Promise<ServerResponse<IndexedUno, ServerError>>;
   play_card: (
     id: string,
+    playerIndex: number,
     cardIndex: number,
-    namedColor: Color | undefined,
-    playerIndex: number
+    namedColor: Color | undefined
   ) => Promise<ServerResponse<IndexedUno, ServerError>>;
   draw_card: (
     id: string,
@@ -119,9 +119,9 @@ export const create_api = (broadcaster: Broadcaster, store: GameStore): API => {
 
   async function play_card(
     id: string,
+    playerIndex: number,
     cardIndex: number,
-    namedColor: Color | undefined,
-    playerIndex: number
+    namedColor: Color | undefined
   ) {
     const game = await update(id, playerIndex, (game) =>
       Model.playCard(cardIndex, namedColor, game)

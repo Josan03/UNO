@@ -180,9 +180,9 @@ export const create_resolvers = (pubsub: PubSub, api: API) => {
       ) {
         const res = await api.play_card(
           params.id,
+          params.playerIndex,
           params.cardIndex,
-          params.namedColor,
-          params.playerIndex
+          params.namedColor
         );
         return res.resolve({
           onSuccess: async (game) => toGraphQLGame(game),

@@ -8,6 +8,7 @@ import PlayCardThunk from "../thunks/PlayCardThunk";
 import DrawCardThunk from "../thunks/DrawCardThunk";
 import SayUnoThunk from "../thunks/SayUnoThunk";
 import CallUnoThunk from "../thunks/CallUnoThunk";
+import PassTurnThunk from "../thunks/PassTurnThunk";
 import type { Card } from "domain/src/model/deck";
 import "./Game.css";
 
@@ -23,12 +24,18 @@ export default function Game() {
   useEffect(() => {
     if (!player) {
       navigate(`/login?game=${id}`);
-    } else if (!game) {
-      navigate("/lobby");
     }
-  }, [player, game, id, navigate]);
+  }, [player, id, navigate]);
 
-  if (!player || !game) return <></>;
+  // Show loading state while game is being fetched
+  if (!player) return <></>;
+  if (!game) {
+    return (
+      <div style={{ padding: "2rem" }}>
+        <h1>Loading game...</h1>
+      </div>
+    );
+  }
 
   const currentRound = game.currentRound;
   if (!currentRound) {
@@ -112,6 +119,12 @@ export default function Game() {
     }
   };
 
+  const handlePassTurn = () => {
+    if (isMyTurn && game) {
+      dispatch(PassTurnThunk({ game, player }));
+    }
+  };
+
   const getCardColor = (card: Card) => {
     if ("color" in card) {
       return card.color;
@@ -125,7 +138,7 @@ export default function Game() {
     if (card.type === "REVERSE") return "⇄";
     if (card.type === "DRAW") return "+2";
     if (card.type === "WILD") return "WILD";
-    if (card.type === "WILD DRAW") return "WILD +4";
+    if (card.type === "WILD_DRAW") return "WILD +4";
     return "?";
   };
 
@@ -226,6 +239,13 @@ export default function Game() {
           style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
         >
           Draw Card
+        </button>
+        <button
+          onClick={handlePassTurn}
+          disabled={!isMyTurn}
+          style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
+        >
+          Pass Turn
         </button>
         <button
           onClick={handleSayUno}

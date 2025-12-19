@@ -21,6 +21,20 @@ export const store = configureStore<State>({
     pending_games: pending_games_slice.reducer,
     ongoing_games: ongoing_games_slice.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore the shuffler function in currentRound
+        ignoredPaths: ["ongoing_games", "pending_games"],
+        ignoredActions: ["ongoing_games/upsert", "pending_games/upsert"],
+        ignoredActionPaths: [
+          "payload.currentRound.shuffler",
+          "payload",
+          "meta.arg.game.currentRound.shuffler",
+          "meta.arg.game",
+        ],
+      },
+    }),
 });
 
 export type StoreType = typeof store;

@@ -354,14 +354,42 @@ export async function call_uno(
   return from_graphql_game(response.call_uno);
 }
 
+export async function pass_turn(game: IndexedUno, playerIndex: number) {
+  const response = (await mutate(
+    gql`
+      ${GAME_FRAGMENT}
+      mutation PassTurn($id: ID!, $playerIndex: Int!) {
+        pass_turn(id: $id, playerIndex: $playerIndex) {
+          ...GameFields
+        }
+      }
+    `,
+    { id: game.id, playerIndex }
+  )) as { pass_turn: GraphQLGame };
+  return from_graphql_game(response.pass_turn);
+}
+
 // Helper functions that convert player names to indices
 export async function playCard(id: string, player: string, card: Card) {
   const g = await game(id);
   if (!g) throw new Error("Game not found");
   const playerIndex = g.players.indexOf(player);
   if (playerIndex === -1) throw new Error("Player not in game");
-  const cardIndex = g.currentRound?.hands[playerIndex]?.findIndex(
-    (c) => JSON.stringify(c) === JSON.stringify(card)
+  const cardIndex = g.currentRound?.hands[playerIndex]?.findIndex((c) => {
+    // Compare cards by their actual properties, ignoring __typename
+    if (c.type !== card.type) return false;
+    if ("color" in c && "color" in card && c.color !== card.color) return false;
+    if ("number" in c && "number" in card && c.number !== card.number)
+      return false;
+    return true;
+  });
+  console.log(
+    "playCard - Found card at index:",
+    cardIndex,
+    "for player:",
+    player,
+    "playerIndex:",
+    playerIndex
   );
   if (cardIndex === undefined || cardIndex === -1)
     throw new Error("Card not in hand");
@@ -392,4 +420,12 @@ export async function callUno(id: string, accuser: string, accused: string) {
   if (accuserIndex === -1 || accusedIndex === -1)
     throw new Error("Player not in game");
   return await call_uno(g, accuserIndex, accusedIndex);
+}
+
+export async function passTurn(id: string, player: string) {
+  const g = await game(id);
+  if (!g) throw new Error("Game not found");
+  const playerIndex = g.players.indexOf(player);
+  if (playerIndex === -1) throw new Error("Player not in game");
+  return await pass_turn(g, playerIndex);
 }

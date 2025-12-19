@@ -17,18 +17,18 @@ import { useServer } from "graphql-ws/use/ws";
 import { PubSub } from "graphql-subscriptions";
 import { create_resolvers, toGraphQLGame } from "./resolvers";
 
-// Test game for development
-const game0: IndexedUno = {
-  id: "0",
-  players: ["Alice", "Bob"],
-  targetScore: 200,
-  playerCount: 2,
-  scores: [0, 0],
-  winner: undefined,
-  currentRound: undefined,
-  pending: false,
-  cardsPerPlayer: 7,
-};
+// Test game for development - commented out, use real games created through UI
+// const game0: IndexedUno = {
+//   id: "0",
+//   players: ["Alice", "Bob"],
+//   targetScore: 200,
+//   playerCount: 2,
+//   scores: [0, 0],
+//   winner: undefined,
+//   currentRound: undefined,
+//   pending: false,
+//   cardsPerPlayer: 7,
+// };
 
 async function startServer(store: GameStore) {
   const pubsub: PubSub = new PubSub();
@@ -97,7 +97,7 @@ async function startServer(store: GameStore) {
 function configAndStart() {
   // For now, just use memory store
   // Can add MongoDB support later if needed
-  startServer(new MemoryStore(game0));
+  startServer(new MemoryStore());
 }
 
 configAndStart();

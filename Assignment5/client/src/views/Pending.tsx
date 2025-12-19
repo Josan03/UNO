@@ -27,12 +27,23 @@ export default function Pending() {
     if (player === undefined) {
       navigate(`/login?pending=${id}`);
     } else if (game === undefined) {
-      if (ongoing_games.some((g) => g.id === id)) navigate(`/game/${id}`);
-      else navigate("/");
+      // Check if the game has already started (moved to ongoing)
+      if (ongoing_games.some((g) => g.id === id)) {
+        navigate(`/game/${id}`);
+      }
     }
-  });
+  }, [player, game, id, navigate, ongoing_games]);
 
-  if (player === undefined || game === undefined) return <></>;
+  if (player === undefined) return <></>;
+
+  // Show loading if game not found yet (could be loading from subscriptions)
+  if (game === undefined) {
+    return (
+      <Page>
+        <div>Loading game...</div>
+      </Page>
+    );
+  }
 
   const canJoin = !game.players.some(_.equals(player));
 
