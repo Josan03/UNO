@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { wsSend } from '../store/websocketMiddleware'
 
 export function Lobby() {
     const dispatch = useAppDispatch()
     const { lobby, playerName, error } = useAppSelector((state) => state.game)
+    const [copied, setCopied] = useState(false)
 
     if (!lobby) return null
 
@@ -14,74 +16,141 @@ export function Lobby() {
         dispatch(wsSend({ type: 'START_GAME', payload: {} }))
     }
 
-    const copyLobbyCode = () => {
-        navigator.clipboard.writeText(lobby.lobbyId)
+    const copyLobbyCode = async () => {
+        await navigator.clipboard.writeText(lobby.lobbyId)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
     }
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md shadow-2xl">
-                <h2 className="text-2xl font-bold text-white mb-2 text-center">Game Lobby</h2>
-
-                <div className="flex items-center justify-center gap-2 mb-6">
-                    <span className="text-white/60">Code:</span>
-                    <span className="text-2xl font-mono font-bold text-white tracking-wider">
-                        {lobby.lobbyId}
-                    </span>
-                    <button
-                        onClick={copyLobbyCode}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        title="Copy code"
-                    >
-                        📋
-                    </button>
+            <div className="glass rounded-3xl p-8 w-full max-w-lg shadow-2xl animate-slide-up">
+                {/* Header */}
+                <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold text-white mb-1">Game Lobby</h2>
+                    <p className="text-white/50 text-sm">Waiting for players...</p>
                 </div>
 
-                <div className="bg-white/5 rounded-xl p-4 mb-6">
-                    <div className="text-white/60 text-sm mb-2">
-                        Players ({lobby.players.length}/{lobby.maxPlayers})
+                {/* Room Code */}
+                <div className="mb-8">
+                    <div className="glass-dark rounded-2xl p-6 text-center">
+                        <p className="text-white/50 text-xs font-semibold tracking-wider mb-2">ROOM CODE</p>
+                        <div className="flex items-center justify-center gap-3">
+                            <span className="text-4xl font-black text-white tracking-[0.2em] font-mono">
+                                {lobby.lobbyId}
+                            </span>
+                            <button
+                                onClick={copyLobbyCode}
+                                className={`p-2.5 rounded-xl transition-all duration-200 ${copied
+                                        ? 'bg-uno-green/20 text-uno-green'
+                                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+                                    }`}
+                                title="Copy code"
+                            >
+                                {copied ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                        <p className="text-white/30 text-xs mt-2">Share this code with friends</p>
+                    </div>
+                </div>
+
+                {/* Players List */}
+                <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-white/70 text-sm font-semibold tracking-wide">PLAYERS</span>
+                        <span className="text-white/50 text-sm">
+                            {lobby.players.length} / {lobby.maxPlayers}
+                        </span>
                     </div>
 
                     <div className="space-y-2">
-                        {lobby.players.map((player, index) => (
+                        {lobby.players.map((player, index) => {
+                            const isMe = player === playerName
+                            const isHostPlayer = index === lobby.hostIndex
+
+                            return (
+                                <div
+                                    key={index}
+                                    className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-200 ${isMe
+                                            ? 'bg-gradient-to-r from-uno-blue/30 to-blue-600/20 border border-uno-blue/30'
+                                            : 'bg-white/5 border border-white/5'
+                                        }`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center
+                                        ${isHostPlayer
+                                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+                                            : 'bg-gradient-to-br from-gray-500 to-gray-700'}`}>
+                                        {isHostPlayer ? (
+                                            <span className="text-lg">👑</span>
+                                        ) : (
+                                            <span className="text-white font-bold">{player.charAt(0).toUpperCase()}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-white font-semibold">{player}</span>
+                                        {isMe && (
+                                            <span className="text-uno-blue text-xs ml-2">(You)</span>
+                                        )}
+                                        {isHostPlayer && (
+                                            <span className="text-yellow-400 text-xs ml-2">Host</span>
+                                        )}
+                                    </div>
+                                    <div className={`w-3 h-3 rounded-full ${isMe ? 'bg-uno-green shadow-glow-green' : 'bg-uno-green/60'
+                                        }`} />
+                                </div>
+                            )
+                        })}
+
+                        {/* Empty slots */}
+                        {Array.from({ length: lobby.maxPlayers - lobby.players.length }).map((_, index) => (
                             <div
-                                key={index}
-                                className={`flex items-center gap-3 p-3 rounded-lg ${player === playerName ? 'bg-uno-blue/30' : 'bg-white/5'
-                                    }`}
+                                key={`empty-${index}`}
+                                className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-dashed border-white/10"
                             >
-                                <span className="text-2xl">
-                                    {index === lobby.hostIndex ? '👑' : '👤'}
-                                </span>
-                                <span className="text-white font-medium flex-1">
-                                    {player}
-                                    {player === playerName && (
-                                        <span className="text-white/40 text-sm ml-2">(You)</span>
-                                    )}
-                                </span>
+                                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                                    <span className="text-white/20">?</span>
+                                </div>
+                                <span className="text-white/20">Waiting for player...</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
+                {/* Error */}
                 {error && (
-                    <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-3 mb-4 text-red-300 text-sm">
-                        {error}
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                        <p className="text-red-400 text-sm text-center">{error}</p>
                     </div>
                 )}
 
+                {/* Start Button */}
                 {isHost ? (
                     <button
                         onClick={handleStartGame}
                         disabled={!canStart}
-                        className="w-full py-3 rounded-lg bg-uno-green text-white font-semibold
-                       hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+                        className={`w-full py-4 rounded-xl font-bold text-lg tracking-wide transition-all duration-300
+                            ${canStart
+                                ? 'bg-gradient-to-r from-uno-green to-green-600 text-white hover:shadow-glow-green transform hover:scale-[1.02]'
+                                : 'bg-white/10 text-white/30 cursor-not-allowed'
+                            }`}
                     >
-                        {canStart ? 'Start Game' : 'Waiting for players...'}
+                        {canStart ? 'START GAME' : `Waiting for ${2 - lobby.players.length} more player(s)...`}
                     </button>
                 ) : (
-                    <div className="text-center text-white/60 py-3">
-                        Waiting for host to start the game...
+                    <div className="text-center py-4">
+                        <div className="inline-flex items-center gap-2 text-white/50">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white/70 rounded-full animate-spin" />
+                            <span>Waiting for host to start...</span>
+                        </div>
                     </div>
                 )}
             </div>

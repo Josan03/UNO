@@ -20,7 +20,6 @@ export function Home() {
             dispatch(wsConnect(wsUrl))
         }
 
-        // Message will be queued if not yet connected
         dispatch(wsSend({
             type: 'CREATE_LOBBY',
             payload: { playerName: name.trim(), maxPlayers }
@@ -37,7 +36,6 @@ export function Home() {
             dispatch(wsConnect(wsUrl))
         }
 
-        // Message will be queued if not yet connected
         dispatch(wsSend({
             type: 'JOIN_LOBBY',
             payload: { playerName: name.trim(), lobbyId: lobbyCode.toUpperCase() || undefined }
@@ -45,88 +43,135 @@ export function Home() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md shadow-2xl">
-                <h1 className="text-4xl font-bold text-center text-white mb-2">🎴 UNO</h1>
-                <p className="text-center text-white/60 mb-8">Multiplayer</p>
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Decorative background cards */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-20 -left-20 w-40 h-56 bg-gradient-to-br from-uno-red to-red-700 
+                    rounded-2xl rotate-[-15deg] opacity-20 blur-sm" />
+                <div className="absolute top-40 -right-10 w-32 h-44 bg-gradient-to-br from-uno-blue to-blue-700 
+                    rounded-2xl rotate-[25deg] opacity-20 blur-sm" />
+                <div className="absolute -bottom-10 left-1/4 w-36 h-48 bg-gradient-to-br from-uno-green to-green-700 
+                    rounded-2xl rotate-[10deg] opacity-20 blur-sm" />
+                <div className="absolute bottom-40 right-1/4 w-28 h-40 bg-gradient-to-br from-uno-yellow to-yellow-600 
+                    rounded-2xl rotate-[-20deg] opacity-20 blur-sm" />
+            </div>
 
-                <div className="space-y-4">
+            <div className="glass rounded-3xl p-8 w-full max-w-md shadow-2xl relative z-10 animate-slide-up">
+                {/* Logo */}
+                <div className="text-center mb-8">
+                    <div className="inline-block relative">
+                        <h1 className="text-6xl font-black text-transparent bg-clip-text 
+                            bg-gradient-to-r from-uno-red via-uno-yellow to-uno-green
+                            italic tracking-tight drop-shadow-lg">
+                            UNO
+                        </h1>
+                        <div className="absolute -inset-4 bg-gradient-to-r from-uno-red/20 via-uno-yellow/20 to-uno-green/20 
+                            blur-xl -z-10 rounded-full" />
+                    </div>
+                    <p className="text-white/50 text-sm mt-2 font-medium tracking-wide">MULTIPLAYER</p>
+                </div>
+
+                <div className="space-y-5">
+                    {/* Name Input */}
                     <div>
-                        <label className="block text-white/80 text-sm mb-1">Your Name</label>
+                        <label className="block text-white/70 text-sm font-semibold mb-2 tracking-wide">
+                            YOUR NAME
+                        </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Enter your name"
-                            className="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-white/40 
-                         border border-white/20 focus:border-white/40 focus:outline-none"
+                            className="w-full px-4 py-3.5 rounded-xl bg-white/10 text-white 
+                                placeholder-white/30 border border-white/10 
+                                focus:border-uno-blue/50 focus:bg-white/15 focus:outline-none
+                                transition-all duration-200 font-medium"
                         />
                     </div>
 
+                    {/* Player Count */}
                     <div>
-                        <label className="block text-white/80 text-sm mb-1">Number of Players</label>
-                        <div className="flex items-center gap-3">
+                        <label className="block text-white/70 text-sm font-semibold mb-2 tracking-wide">
+                            PLAYERS
+                        </label>
+                        <div className="flex items-center gap-4">
                             <input
                                 type="range"
                                 min="2"
                                 max="10"
                                 value={maxPlayers}
                                 onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                                className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                                className="flex-1"
                             />
-                            <span className="text-white font-bold w-8 text-center">{maxPlayers}</span>
+                            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center
+                                border border-white/10">
+                                <span className="text-white font-bold text-xl">{maxPlayers}</span>
+                            </div>
                         </div>
                     </div>
 
+                    {/* Create Button */}
                     <button
                         onClick={handleCreateLobby}
                         disabled={!name.trim()}
-                        className="w-full py-3 rounded-lg bg-uno-red text-white font-semibold
-                       hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+                        className="w-full py-4 rounded-xl font-bold text-lg tracking-wide
+                            bg-gradient-to-r from-uno-red to-red-600 text-white
+                            hover:from-red-600 hover:to-red-700 hover:shadow-glow-red
+                            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none
+                            transition-all duration-300 transform hover:scale-[1.02]"
                     >
-                        Create New Game
+                        CREATE GAME
                     </button>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1 h-px bg-white/20" />
-                        <span className="text-white/40 text-sm">or</span>
-                        <div className="flex-1 h-px bg-white/20" />
+                    {/* Divider */}
+                    <div className="flex items-center gap-4 py-2">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        <span className="text-white/30 text-sm font-medium">OR JOIN</span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     </div>
 
+                    {/* Room Code */}
                     <div>
-                        <label className="block text-white/80 text-sm mb-1">Room Code</label>
+                        <label className="block text-white/70 text-sm font-semibold mb-2 tracking-wide">
+                            ROOM CODE
+                        </label>
                         <input
                             type="text"
                             value={lobbyCode}
                             onChange={(e) => setLobbyCode(e.target.value.toUpperCase())}
-                            placeholder="Enter room code"
+                            placeholder="Enter code"
                             maxLength={8}
-                            className="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-white/40 
-                         border border-white/20 focus:border-white/40 focus:outline-none uppercase"
+                            className="w-full px-4 py-3.5 rounded-xl bg-white/10 text-white text-center
+                                placeholder-white/30 border border-white/10 font-mono text-xl tracking-[0.3em]
+                                focus:border-uno-blue/50 focus:bg-white/15 focus:outline-none
+                                transition-all duration-200 uppercase"
                         />
                     </div>
 
+                    {/* Join Button */}
                     <button
                         onClick={handleJoinLobby}
                         disabled={!name.trim()}
-                        className="w-full py-3 rounded-lg bg-uno-blue text-white font-semibold
-                       hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+                        className="w-full py-4 rounded-xl font-bold text-lg tracking-wide
+                            bg-gradient-to-r from-uno-blue to-blue-600 text-white
+                            hover:from-blue-600 hover:to-blue-700 hover:shadow-glow-blue
+                            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none
+                            transition-all duration-300 transform hover:scale-[1.02]"
                     >
-                        Join Game
+                        JOIN GAME
                     </button>
                 </div>
 
+                {/* Connection Status */}
                 <div className="mt-6 text-center">
-                    <span className={`inline-flex items-center gap-2 text-sm ${connectionStatus === 'connected' ? 'text-green-400' :
-                        connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-white/40'
+                    <span className={`inline-flex items-center gap-2 text-sm font-medium ${connectionStatus === 'connected' ? 'text-uno-green' :
+                        connectionStatus === 'connecting' ? 'text-uno-yellow' : 'text-white/30'
                         }`}>
-                        <span className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-400' :
-                            connectionStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 'bg-white/40'
+                        <span className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-uno-green shadow-glow-green' :
+                            connectionStatus === 'connecting' ? 'bg-uno-yellow animate-pulse' : 'bg-white/30'
                             }`} />
                         {connectionStatus === 'connected' ? 'Connected' :
-                            connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                            connectionStatus === 'connecting' ? 'Connecting...' : 'Ready to connect'}
                     </span>
                 </div>
             </div>

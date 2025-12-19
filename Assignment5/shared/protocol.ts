@@ -1,6 +1,9 @@
 import { Card, Color } from './model/deck'
 import { Direction } from './model/round'
 
+// Re-export types for convenience
+export type { Card, Color }
+
 // ============================================
 // Client -> Server Messages
 // ============================================

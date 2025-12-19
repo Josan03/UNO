@@ -8,68 +8,156 @@ interface UnoCardProps {
     faceDown?: boolean
 }
 
-const colorClasses: Record<Color, string> = {
-    RED: 'bg-uno-red',
-    BLUE: 'bg-uno-blue',
-    GREEN: 'bg-uno-green',
-    YELLOW: 'bg-uno-yellow'
-}
-
-const getCardDisplay = (card: Card): { symbol: string; text: string } => {
-    switch (card.type) {
-        case 'NUMBERED':
-            return { symbol: String(card.number), text: String(card.number) }
-        case 'SKIP':
-            return { symbol: '⊘', text: 'SKIP' }
-        case 'REVERSE':
-            return { symbol: '⟲', text: 'REV' }
-        case 'DRAW':
-            return { symbol: '+2', text: '+2' }
-        case 'WILD':
-            return { symbol: '🌈', text: 'WILD' }
-        case 'WILD DRAW':
-            return { symbol: '+4', text: '+4' }
+const colorStyles: Record<Color, { bg: string; text: string; glow: string }> = {
+    RED: {
+        bg: 'bg-gradient-to-br from-red-500 via-uno-red to-red-700',
+        text: 'text-uno-red',
+        glow: 'shadow-glow-red'
+    },
+    BLUE: {
+        bg: 'bg-gradient-to-br from-blue-400 via-uno-blue to-blue-700',
+        text: 'text-uno-blue',
+        glow: 'shadow-glow-blue'
+    },
+    GREEN: {
+        bg: 'bg-gradient-to-br from-green-400 via-uno-green to-green-700',
+        text: 'text-uno-green',
+        glow: 'shadow-glow-green'
+    },
+    YELLOW: {
+        bg: 'bg-gradient-to-br from-yellow-300 via-uno-yellow to-yellow-500',
+        text: 'text-yellow-600',
+        glow: 'shadow-glow-yellow'
     }
 }
 
-const sizeClasses = {
-    small: 'w-12 h-18 text-lg',
-    medium: 'w-16 h-24 text-2xl',
-    large: 'w-20 h-30 text-3xl'
+const getCardContent = (card: Card): { symbol: string; small: string } => {
+    switch (card.type) {
+        case 'NUMBERED':
+            return { symbol: String(card.number), small: String(card.number) }
+        case 'SKIP':
+            return { symbol: '⊘', small: '⊘' }
+        case 'REVERSE':
+            return { symbol: '⇄', small: '⇄' }
+        case 'DRAW':
+            return { symbol: '+2', small: '+2' }
+        case 'WILD':
+            return { symbol: '★', small: 'W' }
+        case 'WILD DRAW':
+            return { symbol: '+4', small: '+4' }
+    }
+}
+
+const sizeConfig = {
+    small: {
+        card: 'w-14 h-20',
+        symbol: 'text-xl',
+        corner: 'text-[10px]',
+        ellipse: 'inset-[15%]'
+    },
+    medium: {
+        card: 'w-20 h-28',
+        symbol: 'text-3xl',
+        corner: 'text-xs',
+        ellipse: 'inset-[12%]'
+    },
+    large: {
+        card: 'w-28 h-40',
+        symbol: 'text-5xl',
+        corner: 'text-sm',
+        ellipse: 'inset-[10%]'
+    }
 }
 
 export function UnoCard({ card, canPlay, onClick, size = 'medium', faceDown = false }: UnoCardProps) {
-    const { symbol, text } = getCardDisplay(card)
+    const config = sizeConfig[size]
+    const { symbol, small } = getCardContent(card)
     const isWild = card.type === 'WILD' || card.type === 'WILD DRAW'
-    const bgColor = isWild ? 'bg-gray-800' : colorClasses[card.color!]
 
     if (faceDown) {
         return (
             <div
-                className={`${sizeClasses[size]} rounded-xl bg-gray-700 border-2 border-gray-600
-                    flex items-center justify-center shadow-lg`}
+                className={`${config.card} rounded-xl relative overflow-hidden shadow-card
+                    bg-gradient-to-br from-gray-800 via-gray-900 to-black
+                    border-2 border-gray-600`}
             >
-                <span className="text-4xl">🎴</span>
+                {/* Card back pattern */}
+                <div className="absolute inset-2 rounded-lg bg-gradient-to-br from-red-600 to-red-800 
+                    flex items-center justify-center">
+                    <div className="absolute inset-2 rounded-md border-2 border-yellow-400/50" />
+                    <span className="text-yellow-400 font-black italic text-lg tracking-tighter 
+                        drop-shadow-lg rotate-[-5deg]">
+                        UNO
+                    </span>
+                </div>
             </div>
         )
     }
 
+    const styles = isWild ? null : colorStyles[card.color!]
+    const bgClass = isWild
+        ? 'bg-gradient-to-br from-gray-800 via-gray-900 to-black'
+        : styles!.bg
+
     return (
         <div
             onClick={canPlay ? onClick : undefined}
-            className={`${sizeClasses[size]} ${bgColor} rounded-xl border-4 border-white
-                  flex flex-col items-center justify-center shadow-lg
-                  ${canPlay ? 'cursor-pointer hover:scale-110 hover:-translate-y-2 ring-2 ring-white/50' : ''}
-                  ${!canPlay && onClick ? 'opacity-60' : ''}
-                  transition-all duration-200`}
+            className={`${config.card} rounded-xl relative overflow-hidden shadow-card
+                ${bgClass}
+                ${canPlay ? `cursor-pointer hover:scale-110 hover:-translate-y-3 hover:shadow-card-hover 
+                    ${isWild ? '' : styles!.glow} z-10` : ''}
+                ${!canPlay && onClick ? 'opacity-70 grayscale-[20%]' : ''}
+                transition-all duration-200 ease-out
+                border-2 ${isWild ? 'border-gray-600' : 'border-white/30'}`}
         >
-            {isWild ? (
+            {/* White ellipse center */}
+            <div className={`absolute ${config.ellipse} bg-white rounded-[45%] rotate-[30deg]
+                shadow-inner flex items-center justify-center`}>
+                {isWild ? (
+                    <div className="w-full h-full relative">
+                        {/* Wild card multi-color segments */}
+                        <div className="absolute inset-0 rounded-[45%] overflow-hidden rotate-[-30deg]">
+                            <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-uno-red" />
+                            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-uno-blue" />
+                            <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-uno-yellow" />
+                            <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-uno-green" />
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className={`${config.symbol} font-black text-white drop-shadow-lg
+                                ${card.type === 'WILD DRAW' ? '' : ''}`}>
+                                {symbol}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <span className={`${config.symbol} font-black ${styles!.text} rotate-[-30deg]`}>
+                        {symbol}
+                    </span>
+                )}
+            </div>
+
+            {/* Corner numbers/symbols */}
+            {!isWild && (
                 <>
-                    <span className="text-white font-bold">{symbol}</span>
-                    <span className="text-white text-xs mt-1">{text}</span>
+                    <span className={`absolute top-1.5 left-2 ${config.corner} font-bold text-white 
+                        drop-shadow-md`}>
+                        {small}
+                    </span>
+                    <span className={`absolute bottom-1.5 right-2 ${config.corner} font-bold text-white 
+                        drop-shadow-md rotate-180`}>
+                        {small}
+                    </span>
                 </>
-            ) : (
-                <span className="text-white font-bold drop-shadow-lg">{symbol}</span>
+            )}
+
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent 
+                pointer-events-none rounded-xl" />
+
+            {/* Playable indicator */}
+            {canPlay && (
+                <div className="absolute inset-0 rounded-xl ring-2 ring-white/60 ring-offset-1 
+                    ring-offset-transparent animate-pulse" />
             )}
         </div>
     )

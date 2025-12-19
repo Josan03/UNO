@@ -5,35 +5,39 @@ interface ColorPickerProps {
     onCancel: () => void
 }
 
-const colors: { color: Color; bg: string; label: string }[] = [
-    { color: 'RED', bg: 'bg-uno-red hover:bg-red-700', label: 'Red' },
-    { color: 'BLUE', bg: 'bg-uno-blue hover:bg-blue-700', label: 'Blue' },
-    { color: 'GREEN', bg: 'bg-uno-green hover:bg-green-700', label: 'Green' },
-    { color: 'YELLOW', bg: 'bg-uno-yellow hover:bg-yellow-600', label: 'Yellow' }
+const colors: { color: Color; gradient: string; glow: string }[] = [
+    { color: 'RED', gradient: 'from-red-500 to-uno-red', glow: 'hover:shadow-glow-red' },
+    { color: 'BLUE', gradient: 'from-blue-400 to-uno-blue', glow: 'hover:shadow-glow-blue' },
+    { color: 'GREEN', gradient: 'from-green-400 to-uno-green', glow: 'hover:shadow-glow-green' },
+    { color: 'YELLOW', gradient: 'from-yellow-300 to-uno-yellow', glow: 'hover:shadow-glow-yellow' }
 ]
 
 export function ColorPicker({ onSelect, onCancel }: ColorPickerProps) {
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-2xl p-6 shadow-2xl">
-                <h3 className="text-xl font-bold text-white text-center mb-4">Choose a Color</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="glass rounded-3xl p-8 shadow-2xl animate-slide-up">
+                <h3 className="text-2xl font-bold text-white text-center mb-6">Choose Color</h3>
 
-                <div className="grid grid-cols-2 gap-3">
-                    {colors.map(({ color, bg, label }) => (
+                <div className="grid grid-cols-2 gap-4">
+                    {colors.map(({ color, gradient, glow }) => (
                         <button
                             key={color}
                             onClick={() => onSelect(color)}
-                            className={`${bg} w-20 h-20 rounded-xl text-white font-bold
-                         transition-transform hover:scale-105 shadow-lg`}
+                            className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${gradient}
+                                transition-all duration-300 transform hover:scale-110 ${glow}
+                                flex items-center justify-center`}
                         >
-                            {label}
+                            <span className="text-white/90 font-bold text-sm drop-shadow-lg">
+                                {color}
+                            </span>
                         </button>
                     ))}
                 </div>
 
                 <button
                     onClick={onCancel}
-                    className="w-full mt-4 py-2 text-white/60 hover:text-white transition-colors"
+                    className="w-full mt-6 py-3 text-white/50 hover:text-white hover:bg-white/10 
+                        rounded-xl transition-all duration-200 font-medium"
                 >
                     Cancel
                 </button>

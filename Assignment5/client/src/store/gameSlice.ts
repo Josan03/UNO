@@ -1,7 +1,19 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { LobbyState, GameStateForPlayer, ServerMessage } from '@shared/protocol'
+import { LobbyState, GameStateForPlayer, ServerMessage, Card, Color } from '@shared/protocol'
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected'
+
+export interface HistoryEntry {
+    id: number
+    type: 'CARD_PLAYED' | 'CARD_DRAWN' | 'UNO_CALLED' | 'UNO_CAUGHT'
+    playerIndex: number
+    playerName: string
+    card?: Card
+    newColor?: Color
+    accusedIndex?: number
+    accusedName?: string
+    timestamp: number
+}
 
 interface GameSliceState {
     connectionStatus: ConnectionStatus
@@ -13,6 +25,7 @@ interface GameSliceState {
         type: string
         payload?: any
     } | null
+    gameHistory: HistoryEntry[]
 }
 
 const initialState: GameSliceState = {
@@ -21,7 +34,8 @@ const initialState: GameSliceState = {
     lobby: null,
     game: null,
     error: null,
-    lastEvent: null
+    lastEvent: null,
+    gameHistory: []
 }
 
 export const gameSlice = createSlice({
@@ -56,16 +70,67 @@ export const gameSlice = createSlice({
                     state.lobby = message.payload
                     break
                 case 'GAME_STARTED':
+                    state.game = message.payload
+                    state.lobby = null
+                    state.gameHistory = [] // Clear history on new game
+                    break
                 case 'GAME_STATE':
                     state.game = message.payload
                     state.lobby = null
                     break
-                case 'CARD_PLAYED':
-                case 'CARD_DRAWN':
-                case 'UNO_CALLED':
-                case 'UNO_CAUGHT':
+                case 'CARD_PLAYED': {
                     state.lastEvent = { type: message.type, payload: message.payload }
+                    const playerName = state.game?.players[message.payload.playerIndex]?.name ?? 'Unknown'
+                    state.gameHistory.push({
+                        id: Date.now(),
+                        type: 'CARD_PLAYED',
+                        playerIndex: message.payload.playerIndex,
+                        playerName,
+                        card: message.payload.card,
+                        newColor: message.payload.newColor,
+                        timestamp: Date.now()
+                    })
                     break
+                }
+                case 'CARD_DRAWN': {
+                    state.lastEvent = { type: message.type, payload: message.payload }
+                    const playerName = state.game?.players[message.payload.playerIndex]?.name ?? 'Unknown'
+                    state.gameHistory.push({
+                        id: Date.now(),
+                        type: 'CARD_DRAWN',
+                        playerIndex: message.payload.playerIndex,
+                        playerName,
+                        timestamp: Date.now()
+                    })
+                    break
+                }
+                case 'UNO_CALLED': {
+                    state.lastEvent = { type: message.type, payload: message.payload }
+                    const playerName = state.game?.players[message.payload.playerIndex]?.name ?? 'Unknown'
+                    state.gameHistory.push({
+                        id: Date.now(),
+                        type: 'UNO_CALLED',
+                        playerIndex: message.payload.playerIndex,
+                        playerName,
+                        timestamp: Date.now()
+                    })
+                    break
+                }
+                case 'UNO_CAUGHT': {
+                    state.lastEvent = { type: message.type, payload: message.payload }
+                    const accuserName = state.game?.players[message.payload.accuser]?.name ?? 'Unknown'
+                    const accusedName = state.game?.players[message.payload.accused]?.name ?? 'Unknown'
+                    state.gameHistory.push({
+                        id: Date.now(),
+                        type: 'UNO_CAUGHT',
+                        playerIndex: message.payload.accuser,
+                        playerName: accuserName,
+                        accusedIndex: message.payload.accused,
+                        accusedName,
+                        timestamp: Date.now()
+                    })
+                    break
+                }
                 case 'GAME_ENDED':
                     if (state.game) {
                         state.game.winner = message.payload.winner
@@ -86,11 +151,13 @@ export const gameSlice = createSlice({
             state.game = null
             state.error = null
             state.lastEvent = null
+            state.gameHistory = []
         },
         returnToLobby: (state) => {
             state.game = null
             state.error = null
             state.lastEvent = null
+            state.gameHistory = []
         }
     }
 })
