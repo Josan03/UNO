@@ -97,7 +97,7 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #ed1c24, #0072bc, #00a651, #ffed00);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 input[type="range"]::-webkit-slider-thumb {

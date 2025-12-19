@@ -60,13 +60,9 @@ export function Home() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-block relative">
-                        <h1 className="text-6xl font-black text-transparent bg-clip-text 
-                            bg-gradient-to-r from-uno-red via-uno-yellow to-uno-green
-                            italic tracking-tight drop-shadow-lg">
+                        <h1 className="text-6xl font-black text-white italic tracking-tight drop-shadow-lg">
                             UNO
                         </h1>
-                        <div className="absolute -inset-4 bg-gradient-to-r from-uno-red/20 via-uno-yellow/20 to-uno-green/20 
-                            blur-xl -z-10 rounded-full" />
                     </div>
                     <p className="text-white/50 text-sm mt-2 font-medium tracking-wide">MULTIPLAYER</p>
                 </div>
@@ -94,19 +90,20 @@ export function Home() {
                         <label className="block text-white/70 text-sm font-semibold mb-2 tracking-wide">
                             PLAYERS
                         </label>
-                        <div className="flex items-center gap-4">
-                            <input
-                                type="range"
-                                min="2"
-                                max="10"
-                                value={maxPlayers}
-                                onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                                className="flex-1"
-                            />
-                            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center
-                                border border-white/10">
-                                <span className="text-white font-bold text-xl">{maxPlayers}</span>
-                            </div>
+                        <div className="flex items-center gap-2">
+                            {[2, 3, 4, 5].map((num) => (
+                                <button
+                                    key={num}
+                                    onClick={() => setMaxPlayers(num)}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all duration-200
+                                        ${maxPlayers === num
+                                            ? 'bg-uno-blue text-white shadow-glow-blue'
+                                            : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border border-white/10'
+                                        }`}
+                                >
+                                    {num}
+                                </button>
+                            ))}
                         </div>
                     </div>
 

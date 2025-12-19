@@ -233,7 +233,7 @@ export class GameServer {
             id: lobbyId,
             players: [playerConnection],
             hostIndex: 0,
-            maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 10), // Clamp between 2-10
+            maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 5), // Clamp between 2-5
             game: null,
             botIndices: []
         }

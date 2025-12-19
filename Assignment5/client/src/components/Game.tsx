@@ -4,6 +4,7 @@ import { wsSend } from '../store/websocketMiddleware'
 import { UnoCard } from './UnoCard'
 import { ColorPicker } from './ColorPicker'
 import { GameHistory } from './GameHistory'
+import { GameResults } from './GameResults'
 import { Color } from '@shared/model/deck'
 
 export function Game() {
@@ -61,10 +62,6 @@ export function Game() {
         }))
     }
 
-    const handleReturnToLobby = () => {
-        dispatch(wsSend({ type: 'RETURN_TO_LOBBY', payload: {} }))
-    }
-
     const currentColor = game.round?.currentColor ?? 'RED'
     const colorGlow: Record<Color, string> = {
         RED: 'shadow-[0_0_60px_rgba(237,28,36,0.4)]',
@@ -79,38 +76,16 @@ export function Game() {
         YELLOW: 'from-uno-yellow/20'
     }
 
-    const isWinner = winnerInfo?.winner === game.playerIndex
-
     return (
         <div className="min-h-screen p-4 flex flex-col relative">
-            {/* Winner Modal */}
+            {/* Game Results Screen */}
             {gameEnded && winnerInfo && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="glass rounded-3xl p-10 shadow-2xl text-center max-w-md mx-4 animate-slide-up">
-                        <div className={`text-8xl mb-6 ${isWinner ? 'animate-bounce' : ''}`}>
-                            {isWinner ? '🏆' : '🎮'}
-                        </div>
-                        <h2 className={`text-4xl font-black mb-3 ${isWinner
-                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600'
-                            : 'text-white'
-                            }`}>
-                            {isWinner ? 'VICTORY!' : 'GAME OVER'}
-                        </h2>
-                        <p className="text-white/60 text-lg mb-8">
-                            {isWinner
-                                ? 'You played all your cards first!'
-                                : `${winnerInfo.winnerName} wins this round!`}
-                        </p>
-                        <button
-                            onClick={handleReturnToLobby}
-                            className="w-full py-4 rounded-xl font-bold text-lg
-                                bg-gradient-to-r from-uno-blue to-blue-600 text-white
-                                hover:shadow-glow-blue transition-all duration-300 transform hover:scale-[1.02]"
-                        >
-                            RETURN TO LOBBY
-                        </button>
-                    </div>
-                </div>
+                <GameResults
+                    winnerIndex={winnerInfo.winner}
+                    winnerName={winnerInfo.winnerName}
+                    players={game.players}
+                    myIndex={game.playerIndex}
+                />
             )}
 
             {showColorPicker && (
