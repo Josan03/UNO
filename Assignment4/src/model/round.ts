@@ -1,17 +1,7 @@
-import * as _ from 'lodash/fp'
 import { Card, Color, createInitialDeck, Deck } from "./deck"
-import { Shuffler, standardShuffler } from '../utils/random_utils'
+import { Shuffler, standardShuffler } from "../utils/random_utils"
 
 export type Direction = "clockwise" | "counterclockwise"
-
-// Helper function to clone a round without mutating the original
-const cloneRound = (round: Round): Round => ({
-    ...round,
-    hands: round.hands.map(hand => [...hand]),
-    drawPile: [...round.drawPile],
-    discardPile: [...round.discardPile],
-    unoCalled: [...round.unoCalled],
-})
 
 export interface Round {
     players: string[]
@@ -29,234 +19,354 @@ export interface Round {
     unoFailureCandidate: number | undefined
 }
 
-export const canPlay = (cardIndex: number, round: Round): boolean => {
-    if (round.playerInTurn === undefined)
-        return false
+export const createRound = (
+    players: string[],
+    dealer: number,
+    shuffler: Shuffler<Card> = standardShuffler,
+    cardsPerPlayer: number = 7
+): Round => {
+    if (players.length < 2 || players.length > 10)
+        throw new Error(`Error: players count should be between 2 and 10`)
 
-    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
-        return false
+    let deck = createInitialDeck()
+    deck = shuffler(deck)
 
-    const cardToPlay = round.hands[round.playerInTurn][cardIndex];
-    const topCard = topOfDiscard(round);
-    const currentColor = round.currentColor;
-
-    if (cardToPlay.type === 'WILD DRAW') {
-        if (topCard.type === 'DRAW')
-            return true
-
-        const hasMatchingColorCard = round.hands[round.playerInTurn].some((card: Card) => card.color === currentColor && card.type !== 'DRAW')
-        if (hasMatchingColorCard)
-            return false
+    const hands: Card[][] = []
+    for (let i = 0; i < players.length; i++) {
+        hands.push(deck.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer))
     }
 
-    if (cardToPlay.type === 'WILD' || cardToPlay.type === 'WILD DRAW')
-        return true
+    const dealtCardsCount = players.length * cardsPerPlayer
 
-    if (cardToPlay.type === 'NUMBERED' && topCard.type === 'NUMBERED')
-        return cardToPlay.color === topCard.color || cardToPlay.number === topCard.number
+    // Get remaining cards for discard and draw pile
+    let remainingCards = deck.slice(dealtCardsCount)
+    let firstCard = remainingCards[0]
+    let drawPile = remainingCards.slice(1)
 
-    if (cardToPlay.type === 'NUMBERED' && topCard.type !== 'NUMBERED')
-        return cardToPlay.color === currentColor
+    // Reshuffle remaining cards if first card is wild
+    while (firstCard.type === 'WILD' || firstCard.type === 'WILD DRAW') {
+        remainingCards = shuffler(remainingCards)
+        firstCard = remainingCards[0]
+        drawPile = remainingCards.slice(1)
+    }
 
-    if (cardToPlay.type === topCard.type)
-        return true
+    const discardPile = [firstCard]
+    const topCard = firstCard
+    const currentColor = topCard.color!
+    let currentDirection: Direction = 'clockwise'
+    let playerInTurn: number
 
+    // Determine starting player based on top card
+    if (topCard.type === 'REVERSE') {
+        currentDirection = 'counterclockwise'
+        playerInTurn = (dealer - 1 + players.length) % players.length
+    } else if (topCard.type === 'SKIP') {
+        playerInTurn = (dealer + 2) % players.length
+    } else if (topCard.type === 'DRAW') {
+        playerInTurn = (dealer + 1) % players.length
+        const drawnCards = drawPile.slice(0, 2)
+        hands[playerInTurn].push(...drawnCards)
+        drawPile = drawPile.slice(2)
+        playerInTurn = (playerInTurn + 1) % players.length
+    } else {
+        playerInTurn = (dealer + 1) % players.length
+    }
 
-    return cardToPlay.color === currentColor
-};
-
-export const canPlayAny = (round: Round): boolean => {
-    if (round.playerInTurn === undefined)
-        return false
-
-    return round.hands[round.playerInTurn].some((_: Card, index: number) => canPlay(index, round))
+    return {
+        players,
+        dealer,
+        playerCount: players.length,
+        hands,
+        drawPile,
+        discardPile,
+        playerInTurn,
+        currentColor,
+        currentDirection,
+        shuffler,
+        unoCalled: new Array(players.length).fill(false),
+        unoFailureChecked: false,
+        unoFailureCandidate: undefined
+    }
 }
 
-export const topOfDiscard = (round: Round): Card => round.discardPile[0];
+export const topOfDiscard = (round: Round): Card => round.discardPile[0]
 
-export const updatePlayerTurn = (round: Round): void => {
-    if (round.playerInTurn === undefined) return
+export const canPlay = (cardIndex: number, round: Round): boolean => {
+    if (round.playerInTurn === undefined) return false
+    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length) return false
 
-    const nextPlayer = (round.playerInTurn + (round.currentDirection === 'clockwise' ? 1 : -1) + round.players.length) % round.players.length;
-    round.playerInTurn = nextPlayer
-};
+    const card = round.hands[round.playerInTurn][cardIndex]
+    const topCard = topOfDiscard(round)
 
-export const draw = (round: Round): Round => {
-    if (round.playerInTurn === undefined)
-        throw new Error('Error: game has ended')
-
-    const newRound = cloneRound(round)
-    const currentPlayer = newRound.playerInTurn
-    const drawnCard = newRound.drawPile.shift();
-    if (drawnCard) {
-        newRound.hands[newRound.playerInTurn!].push(drawnCard);
+    if (card.type === 'WILD DRAW') {
+        const hand = round.hands[round.playerInTurn]
+        const hasMatchingColor = hand.some((c, idx) =>
+            idx !== cardIndex && c.color === round.currentColor
+        )
+        if (hasMatchingColor) return false
+        return true
     }
 
-    if (newRound.drawPile.length === 0) replenishDrawPile(newRound);
-    if (!canPlayAny(newRound)) updatePlayerTurn(newRound);
+    if (card.type === 'WILD') return true
+
+    if (card.color === round.currentColor) return true
+
+    if (card.type === 'NUMBERED' && topCard.type === 'NUMBERED') {
+        return card.number === topCard.number
+    }
+
+    if (card.type === topCard.type) return true
+
+    return false
+}
+
+export const canPlayAny = (round: Round): boolean => {
+    if (round.playerInTurn === undefined) return false
+
+    const hand = round.hands[round.playerInTurn]
+    return hand.some((_, index) => canPlay(index, round))
+}
+
+export const draw = (round: Round): Round => {
+    if (round.playerInTurn === undefined) {
+        throw new Error('Error: game has ended')
+    }
+
+    const currentPlayer = round.playerInTurn
+
+    const newRound: Round = {
+        ...round,
+        hands: round.hands.map(hand => [...hand]),
+        drawPile: [...round.drawPile],
+        discardPile: [...round.discardPile],
+        unoCalled: [...round.unoCalled],
+        unoFailureCandidate: round.unoFailureCandidate === round.playerInTurn ? round.unoFailureCandidate : undefined,
+        unoFailureChecked: false
+    }
+
+    for (let i = 0; i < newRound.unoCalled.length; i++) {
+        if (i !== currentPlayer) {
+            newRound.unoCalled[i] = false
+        }
+    }
+
+    if (newRound.drawPile.length === 0) {
+        const topCard = newRound.discardPile[0]
+        const cardsToShuffle = newRound.discardPile.slice(1)
+        newRound.drawPile = newRound.shuffler(cardsToShuffle)
+        newRound.discardPile = [topCard]
+    }
+
+    const drawnCard = newRound.drawPile.shift()!
+    newRound.hands[newRound.playerInTurn!].push(drawnCard)
+
+    if (newRound.drawPile.length === 0 && newRound.discardPile.length > 1) {
+        const topCard = newRound.discardPile[0]
+        const cardsToShuffle = newRound.discardPile.slice(1)
+        newRound.drawPile = newRound.shuffler(cardsToShuffle)
+        newRound.discardPile = [topCard]
+    }
+
+    if (!canPlayAny(newRound)) {
+        const nextPlayer = (newRound.playerInTurn! + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+        newRound.playerInTurn = nextPlayer
+    }
+
+    return newRound
+}
+
+export const play = (cardIndex: number, namedColor: Color | undefined, round: Round): Round => {
+    if (round.playerInTurn === undefined) {
+        throw new Error('Error: game has ended')
+    }
+
+    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length) {
+        throw new Error('Error: invalid card index')
+    }
+
+    const card = round.hands[round.playerInTurn][cardIndex]
+
+    if ((card.type === 'WILD' || card.type === 'WILD DRAW') && !namedColor) {
+        throw new Error('Error: must name a color for wild cards')
+    }
+
+    if (card.color && namedColor) {
+        throw new Error('Error: cannot name color for colored cards')
+    }
+
+    if (!canPlay(cardIndex, round)) {
+        throw new Error('Error: illegal play')
+    }
+
+    const newRound: Round = {
+        ...round,
+        hands: round.hands.map(hand => [...hand]),
+        drawPile: [...round.drawPile],
+        discardPile: [...round.discardPile],
+        unoCalled: [...round.unoCalled]
+    }
+
+    newRound.hands[newRound.playerInTurn!].splice(cardIndex, 1)
+    newRound.discardPile.unshift(card)
+
+    newRound.currentColor = namedColor || card.color!
+
+    const currentPlayer = newRound.playerInTurn!
+
+    newRound.unoFailureChecked = false
 
     if (newRound.unoFailureCandidate !== undefined && newRound.unoFailureCandidate !== currentPlayer) {
         newRound.unoFailureCandidate = undefined
     }
 
-    if (currentPlayer !== undefined) {
-        for (let i = 0; i < newRound.unoCalled.length; i++) {
-            if (i !== currentPlayer) {
-                newRound.unoCalled[i] = false
-            }
+    for (let i = 0; i < newRound.unoCalled.length; i++) {
+        if (i !== currentPlayer) {
+            newRound.unoCalled[i] = false
         }
     }
 
-    return newRound;
-};
-
-export const drawMultiple = (round: Round, count: number, playerIndex: number): Round => {
-    for (let i = 0; i < count; i++) {
-        const drawnCard = round.drawPile.shift();
-        if (drawnCard) {
-            round.hands[playerIndex].push(drawnCard);
-        }
-
-        if (round.drawPile.length === 0) replenishDrawPile(round)
+    if (newRound.hands[currentPlayer].length === 1) {
+        newRound.unoFailureCandidate = currentPlayer
     }
 
-    return round
-}
-
-export const replenishDrawPile = (round: Round): void => {
-    const topCard = round.discardPile[0];
-    const remainingCards = round.discardPile.slice(1);
-    round.drawPile = round.shuffler(remainingCards);
-    round.discardPile = [topCard];
-};
-
-export const play = (cardIndex: number, namedColor: Color | undefined, round: Round): Round => {
-    if (round.playerInTurn === undefined)
-        throw new Error('Error: game has ended')
-
-    if (cardIndex < 0 || cardIndex >= round.hands[round.playerInTurn].length)
-        throw new Error(`Error: invalid card index, out of bounds`)
-
-    const cardToPlay = round.hands[round.playerInTurn][cardIndex];
-
-    if (cardToPlay.type === 'WILD' || cardToPlay.type === 'WILD DRAW') {
-        if (!namedColor) namedColor = round.currentColor;
-    } else if (!canPlay(cardIndex, round)) {
-        throw new Error(`Error: illegal play`);
-    } else if (canPlay(cardIndex, round) && namedColor)
-        throw new Error(`Error: illegal changing color`)
-
-    const newRound = cloneRound(round)
-    newRound.hands[newRound.playerInTurn!].splice(cardIndex, 1);
-    newRound.discardPile.unshift(cardToPlay);
-
-    newRound.unoFailureChecked = false
-
-    const playerWhoPlayed = newRound.playerInTurn
-
-    if (newRound.unoFailureCandidate !== undefined && newRound.unoFailureCandidate !== playerWhoPlayed) {
-        newRound.unoFailureCandidate = undefined
-    }
-
-    if (playerWhoPlayed !== undefined) {
-        for (let i = 0; i < newRound.unoCalled.length; i++) {
-            if (i !== playerWhoPlayed) {
-                newRound.unoCalled[i] = false
-            }
-        }
-    }
-
-    if (playerWhoPlayed !== undefined && newRound.hands[playerWhoPlayed].length === 1) {
-        newRound.unoFailureCandidate = playerWhoPlayed
-    }
-
-    switch (cardToPlay.type) {
-        case 'REVERSE':
-            if (newRound.playerCount === 2) {
-                updatePlayerTurn(newRound) // Reverse works as skip for 2 players
-            }
-            newRound.currentDirection = newRound.currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise';
-            updatePlayerTurn(newRound);
-            break;
+    switch (card.type) {
         case 'SKIP':
-            updatePlayerTurn(newRound);
-            updatePlayerTurn(newRound); // Skip the next player
-            break;
+            newRound.playerInTurn = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 2 : -2) + newRound.players.length) % newRound.players.length
+            break
+
+        case 'REVERSE':
+            newRound.currentDirection = newRound.currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise'
+
+            // In 2-player game, reverse works as skip
+            if (newRound.playerCount === 2) {
+                newRound.playerInTurn = currentPlayer
+            } else {
+                newRound.playerInTurn = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            }
+            break
+
         case 'DRAW':
-            updatePlayerTurn(newRound); // Move to the next player
-            const drawPlayer1 = newRound.playerInTurn;
-            if (drawPlayer1 !== undefined) {
-                drawMultiple(newRound, 2, drawPlayer1); // Draw 2 cards for the next player
+            const nextPlayer = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            newRound.playerInTurn = nextPlayer
+
+            // Draw 2 cards for that player
+            for (let i = 0; i < 2; i++) {
+                if (newRound.drawPile.length === 0) {
+                    const topCard = newRound.discardPile[0]
+                    const cardsToShuffle = newRound.discardPile.slice(1)
+                    newRound.drawPile = newRound.shuffler(cardsToShuffle)
+                    newRound.discardPile = [topCard]
+                }
+                const drawnCard = newRound.drawPile.shift()!
+                newRound.hands[nextPlayer].push(drawnCard)
             }
-            updatePlayerTurn(newRound); // Skip the player which has drawn 2 cards
-            break;
+
+            newRound.playerInTurn = (nextPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            break
+
         case 'WILD DRAW':
-            newRound.currentColor = namedColor!;
-            updatePlayerTurn(newRound); // Move to the next player
-            const drawPlayer2 = newRound.playerInTurn;
-            if (drawPlayer2 !== undefined) {
-                drawMultiple(newRound, 4, drawPlayer2); // Draw 4 cards for the next player
+            const nextPlayerWild = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            newRound.playerInTurn = nextPlayerWild
+
+            for (let i = 0; i < 4; i++) {
+                if (newRound.drawPile.length === 0) {
+                    const topCard = newRound.discardPile[0]
+                    const cardsToShuffle = newRound.discardPile.slice(1)
+                    newRound.drawPile = newRound.shuffler(cardsToShuffle)
+                    newRound.discardPile = [topCard]
+                }
+                const drawnCard = newRound.drawPile.shift()!
+                newRound.hands[nextPlayerWild].push(drawnCard)
             }
-            updatePlayerTurn(newRound); // Skip the player which has drawn 4 cards
-            break;
+
+            newRound.playerInTurn = (nextPlayerWild + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            break
+
         case 'WILD':
-            newRound.currentColor = namedColor!;
-            updatePlayerTurn(newRound);
-            break;
+        case 'NUMBERED':
         default:
-            newRound.currentColor = cardToPlay.color!;
-            updatePlayerTurn(newRound);
+            newRound.playerInTurn = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
+            break
     }
 
-    if (playerWhoPlayed !== undefined && newRound.hands[playerWhoPlayed].length === 0) {
+    if (newRound.hands[currentPlayer].length === 0) {
         newRound.playerInTurn = undefined
-        return newRound
     }
 
     return newRound
 }
 
 export const sayUno = (playerIndex: number, round: Round): Round => {
-    if (round.playerInTurn === undefined)
+    if (round.playerInTurn === undefined) {
         throw new Error('Error: game has ended')
+    }
 
-    if (playerIndex < 0 || playerIndex >= round.players.length)
+    if (playerIndex < 0 || playerIndex >= round.players.length) {
         throw new Error('Error: invalid player index')
+    }
 
-    const newRound = cloneRound(round)
+    const newRound: Round = {
+        ...round,
+        hands: round.hands.map(hand => [...hand]),
+        drawPile: [...round.drawPile],
+        discardPile: [...round.discardPile],
+        unoCalled: [...round.unoCalled]
+    }
+
     newRound.unoCalled[playerIndex] = true
 
     return newRound
 }
 
 export const checkUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): boolean => {
-    const accused = accuser.accused
+    const { accused } = accuser
 
-    if (accused < 0 || accused >= round.players.length)
+    if (accused < 0 || accused >= round.players.length) {
         throw new Error('Error: invalid accused player index')
+    }
 
-    if (round.unoFailureCandidate !== accused)
-        return false
+    if (round.hands[accused].length !== 1) return false
+    if (round.unoCalled[accused]) return false
 
-    if (round.unoFailureChecked)
-        return false
+    if (round.unoFailureCandidate !== accused) return false
 
-    if (round.hands[accused].length === 1 && !round.unoCalled[accused])
-        return true
+    if (round.unoFailureChecked) return false
 
-    return false
+    return true
 }
 
 export const catchUnoFailure = (accuser: { accuser: number, accused: number }, round: Round): Round => {
-    const accused = accuser.accused
+    const { accused } = accuser
 
-    if (accused < 0 || accused >= round.players.length)
+    if (accused < 0 || accused >= round.players.length) {
         throw new Error('Error: invalid accused player index')
+    }
 
-    const newRound = cloneRound(round)
-    if (newRound.hands[accused].length === 1 && !newRound.unoCalled[accused]) {
-        drawMultiple(newRound, 4, accused)
-        newRound.unoFailureChecked = true
+    if (!checkUnoFailure(accuser, round)) {
+        return round
+    }
+
+    const newRound: Round = {
+        ...round,
+        hands: round.hands.map(hand => [...hand]),
+        drawPile: [...round.drawPile],
+        discardPile: [...round.discardPile],
+        unoCalled: [...round.unoCalled],
+        unoFailureChecked: true
+    }
+
+    for (let i = 0; i < 4; i++) {
+        if (newRound.drawPile.length === 0 && newRound.discardPile.length > 1) {
+            const topCard = newRound.discardPile[0]
+            const cardsToShuffle = newRound.discardPile.slice(1)
+            newRound.drawPile = newRound.shuffler(cardsToShuffle)
+            newRound.discardPile = [topCard]
+        }
+
+        if (newRound.drawPile.length > 0) {
+            const drawnCard = newRound.drawPile.shift()!
+            newRound.hands[accused].push(drawnCard)
+        }
     }
 
     return newRound
@@ -289,76 +399,4 @@ export const score = (round: Round): number | undefined => {
     })
 
     return totalScore
-}
-
-export const createRound = (
-    players: string[],
-    dealer: number,
-    shuffler?: (deck: Deck) => Deck,
-    cardsPerPlayer: number = 7
-): Round => {
-    if (players.length < 2 || players.length > 10)
-        throw new Error(`Error: players count should be between 2 and 10`)
-
-    if (!shuffler)
-        shuffler = standardShuffler
-
-    const deck = createInitialDeck()
-    const shuffledDeck = shuffler(deck)
-
-    const hands = Array.from({ length: players.length }, (_, index) =>
-        shuffledDeck.slice(index * cardsPerPlayer, (index + 1) * cardsPerPlayer)
-    );
-
-    const discardPile = [shuffledDeck[cardsPerPlayer * players.length]] // First card
-    let drawPile = shuffledDeck.slice(cardsPerPlayer * players.length + 1) // All other cards remained
-
-    let playerInTurn = (dealer + 1) % players.length
-    let topCard = discardPile[0]
-
-    const reshuffleIfWildCard = (topCard: Card): Deck => {
-        if (topCard.type === "WILD" || topCard.type === "WILD DRAW") {
-            let reshuffledDeck = shuffler(drawPile)
-            discardPile[0] = reshuffledDeck[0]
-            return reshuffledDeck.slice(1)
-        }
-        return drawPile
-    }
-
-    while (topCard.type === "WILD" || topCard.type === "WILD DRAW") {
-        drawPile = reshuffleIfWildCard(topCard)
-        topCard = discardPile[0]
-    }
-
-    const currentColor: Color = topCard.color!
-
-    let direction: Direction = "clockwise"
-
-    if (topCard.type === 'REVERSE') {
-        direction = "counterclockwise"
-        playerInTurn = (dealer + (players.length - 1)) % players.length
-    } else if (topCard.type === 'SKIP') {
-        playerInTurn = (dealer + 2) % players.length
-    } else if (topCard.type === 'DRAW') {
-        playerInTurn = (dealer + 1) % players.length
-        hands[playerInTurn].push(drawPile.shift()!)
-        hands[playerInTurn].push(drawPile.shift()!)
-        playerInTurn = (dealer + 2) % players.length
-    }
-
-    return {
-        players,
-        dealer,
-        playerCount: players.length,
-        hands,
-        discardPile,
-        drawPile,
-        playerInTurn,
-        currentColor,
-        currentDirection: direction,
-        shuffler,
-        unoCalled: Array(players.length).fill(false),
-        unoFailureChecked: false,
-        unoFailureCandidate: undefined
-    }
 }

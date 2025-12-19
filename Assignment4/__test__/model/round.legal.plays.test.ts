@@ -163,7 +163,6 @@ describe("Legal plays", () => {
     it("is legal to play a card in the same color as the top card", () => {
       const shuffler = builder.hand(1).is({ type: 'NUMBERED', color: 'BLUE' }).build()
       const round: Round = createRound({ players: ['a', 'b', 'c', 'd'], dealer: 3, shuffler })
-      console.log(round)
       expect(canPlay(0, round)).toBeTruthy()
     })
     it("is not legal to play a non-skip card with different color than the top card", () => {
@@ -306,7 +305,6 @@ describe("Legal plays", () => {
       const shuffler = builder.hand(1).is({ color: 'BLUE' }).build()
       let round: Round = createRound({ players: ['a', 'b', 'c', 'd'], dealer: 3, shuffler })
       round = play(0, 'BLUE', round)
-      console.log(round)
       expect(canPlay(0, round)).toBeTruthy()
     })
     it("is illegal to play a hand of another color but the chosen after a wild card", () => {
