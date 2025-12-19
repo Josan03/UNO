@@ -1,12 +1,7 @@
 import { Card, Color } from './model/deck'
 import { Direction } from './model/round'
 
-// Re-export types for convenience
 export type { Card, Color }
-
-// ============================================
-// Client -> Server Messages
-// ============================================
 
 export type ClientMessage =
     | { type: 'JOIN_LOBBY'; payload: { playerName: string; lobbyId?: string } }
@@ -19,10 +14,6 @@ export type ClientMessage =
     | { type: 'SAY_UNO'; payload: {} }
     | { type: 'CATCH_UNO'; payload: { accusedPlayerIndex: number } }
     | { type: 'RETURN_TO_LOBBY'; payload: {} }
-
-// ============================================
-// Server -> Client Messages
-// ============================================
 
 export type ServerMessage =
     | { type: 'LOBBY_JOINED'; payload: LobbyState }
@@ -38,17 +29,13 @@ export type ServerMessage =
     | { type: 'PLAYER_DISCONNECTED'; payload: { playerIndex: number; playerName: string } }
     | { type: 'PLAYER_RECONNECTED'; payload: { playerIndex: number; playerName: string } }
 
-// ============================================
-// Shared State Types
-// ============================================
-
 export interface LobbyState {
     lobbyId: string
     players: string[]
     hostIndex: number
     maxPlayers: number
     isStarted: boolean
-    botPlayers: number[] // indices of bot players
+    botPlayers: number[]
 }
 
 export interface PublicPlayerState {
@@ -59,17 +46,13 @@ export interface PublicPlayerState {
 }
 
 export interface GameStateForPlayer {
-    // Lobby info
     lobbyId: string
 
-    // Player identity
     playerIndex: number
     playerName: string
 
-    // Public game state
     players: PublicPlayerState[]
 
-    // Current round state (null if game ended)
     round: {
         topCard: Card
         currentColor: Color
@@ -80,13 +63,11 @@ export interface GameStateForPlayer {
         unoCalledBy: number[]
     } | null
 
-    // Private player state
     hand: Card[]
-    canPlayCards: boolean[]  // Pre-computed for each card in hand
+    canPlayCards: boolean[]
     canDrawCard: boolean
     isMyTurn: boolean
 
-    // Game result
     winner: number | undefined
 }
 
@@ -94,9 +75,5 @@ export interface GameEndInfo {
     winner: number
     winnerName: string
 }
-
-// ============================================
-// Utility Types
-// ============================================
 
 export type MessageHandler<T> = (message: T) => void

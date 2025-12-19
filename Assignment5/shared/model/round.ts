@@ -38,12 +38,10 @@ export const createRound = (
 
     const dealtCardsCount = players.length * cardsPerPlayer
 
-    // Get remaining cards for discard and draw pile
     let remainingCards = deck.slice(dealtCardsCount)
     let firstCard = remainingCards[0]
     let drawPile = remainingCards.slice(1)
 
-    // Reshuffle remaining cards if first card is wild
     while (firstCard.type === 'WILD' || firstCard.type === 'WILD DRAW') {
         remainingCards = shuffler(remainingCards)
         firstCard = remainingCards[0]
@@ -56,7 +54,6 @@ export const createRound = (
     let currentDirection: Direction = 'clockwise'
     let playerInTurn: number
 
-    // Determine starting player based on top card
     if (topCard.type === 'REVERSE') {
         currentDirection = 'counterclockwise'
         playerInTurn = (dealer - 1 + players.length) % players.length
@@ -237,7 +234,6 @@ export const play = (cardIndex: number, namedColor: Color | undefined, round: Ro
         case 'REVERSE':
             newRound.currentDirection = newRound.currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise'
 
-            // In 2-player game, reverse works as skip
             if (newRound.playerCount === 2) {
                 newRound.playerInTurn = currentPlayer
             } else {
@@ -249,7 +245,6 @@ export const play = (cardIndex: number, namedColor: Color | undefined, round: Ro
             const nextPlayer = (currentPlayer + (newRound.currentDirection === 'clockwise' ? 1 : -1) + newRound.players.length) % newRound.players.length
             newRound.playerInTurn = nextPlayer
 
-            // Draw 2 cards for that player
             for (let i = 0; i < 2; i++) {
                 if (newRound.drawPile.length === 0) {
                     const topCard = newRound.discardPile[0]

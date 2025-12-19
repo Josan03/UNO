@@ -5,7 +5,6 @@ import { store } from './store'
 import App from './App'
 import './index.css'
 
-// Generate random UNO card favicon
 function generateUnoFavicon() {
     const colors = [
         { bg: '#ef4444', name: 'red' },

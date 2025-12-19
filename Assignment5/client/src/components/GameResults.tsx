@@ -17,7 +17,6 @@ export function GameResults({ winnerIndex, winnerName, players, myIndex }: GameR
         dispatch(wsSend({ type: 'RETURN_TO_LOBBY', payload: {} }))
     }
 
-    // Sort players by card count (winner first with 0 cards)
     const sortedPlayers = [...players]
         .map((p, idx) => ({ ...p, originalIndex: idx }))
         .sort((a, b) => a.cardCount - b.cardCount)

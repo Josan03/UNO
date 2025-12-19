@@ -5,7 +5,6 @@ import { Home } from './components/Home'
 import { GridScan } from '@shared/components/GridScan'
 import { Color } from '@shared/model/deck'
 
-// Map UNO colors to hex for GridScan
 const colorToHex: Record<Color, string> = {
     RED: '#ED1C24',
     BLUE: '#0072BC',
@@ -16,12 +15,10 @@ const colorToHex: Record<Color, string> = {
 function App() {
     const { lobby, game } = useAppSelector((state) => state.game)
 
-    // Determine grid color based on game state
     const getGridColor = () => {
         if (game?.round?.currentColor) {
             return colorToHex[game.round.currentColor]
         }
-        // Default purple for lobby/home
         return '#a855f7'
     }
 

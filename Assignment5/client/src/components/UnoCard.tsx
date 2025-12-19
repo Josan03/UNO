@@ -8,7 +8,6 @@ interface UnoCardProps {
     faceDown?: boolean
 }
 
-// Cyberpunk: Keep bright colors but add glitchy/holographic feel
 const colorStyles: Record<Color, { bg: string; text: string; accent: string }> = {
     RED: {
         bg: 'bg-red-500',

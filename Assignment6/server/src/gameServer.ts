@@ -13,10 +13,6 @@ import {
 } from '../../shared/protocol'
 import { makeBotDecision, shouldCallUno, shouldCatchUno, generateBotName, resetBotNames, BotDifficulty } from './botAI'
 
-// ============================================
-// Types
-// ============================================
-
 export interface PlayerConnection {
     id: string
     playerName: string
@@ -32,19 +28,14 @@ export interface Lobby {
     hostIndex: number
     maxPlayers: number
     game: Game | null
-    botIndices: number[] // Track which player indices are bots
+    botIndices: number[]
 }
-
-// ============================================
-// GameServer Class
-// ============================================
 
 export class GameServer {
     private lobbies = new Map<string, Lobby>()
     private playerToLobby = new Map<string, string>()
-    private playerConnections = new Map<string, PlayerConnection>() // Store player connections
+    private playerConnections = new Map<string, PlayerConnection>()
 
-    // RxJS subjects for event streams
     private messageSubject = new Subject<{ playerId: string; message: ClientMessage }>()
     private lobbyUpdateSubject = new Subject<{ lobbyId: string; lobby: Lobby }>()
     private gameEventSubject = new Subject<{ lobbyId: string; event: ServerMessage }>()
@@ -52,10 +43,6 @@ export class GameServer {
     constructor() {
         this.setupMessageHandlers()
     }
-
-    // ============================================
-    // Public API
-    // ============================================
 
     handleMessage(playerId: string, message: ClientMessage): void {
         this.messageSubject.next({ playerId, message })
@@ -69,7 +56,6 @@ export class GameServer {
             isConnected: true,
             isBot: false
         }
-        // Store the connection so findOrCreatePlayer can find it
         this.playerConnections.set(playerId, connection)
         return connection
     }
@@ -85,14 +71,12 @@ export class GameServer {
         if (playerIndex === -1) return
 
         if (lobby.game) {
-            // Game in progress - mark as disconnected
             lobby.players[playerIndex].isConnected = false
             this.broadcastToLobby(lobbyId, {
                 type: 'PLAYER_DISCONNECTED',
                 payload: { playerIndex, playerName: lobby.players[playerIndex].playerName }
             })
         } else {
-            // In lobby - remove player
             lobby.players.splice(playerIndex, 1)
             this.playerToLobby.delete(playerId)
 
@@ -126,7 +110,7 @@ export class GameServer {
             payload: { playerIndex, playerName: player.playerName }
         })
 
-        // Send current game state
+
         if (lobby.game) {
             player.send({
                 type: 'GAME_STATE',
@@ -137,12 +121,7 @@ export class GameServer {
         return true
     }
 
-    // ============================================
-    // Message Handlers Setup
-    // ============================================
-
     private setupMessageHandlers(): void {
-        // Handle CREATE_LOBBY
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'CREATE_LOBBY')
         ).subscribe(({ playerId, message }) => {
@@ -150,7 +129,6 @@ export class GameServer {
             this.handleCreateLobby(playerId, message.payload)
         })
 
-        // Handle JOIN_LOBBY
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'JOIN_LOBBY')
         ).subscribe(({ playerId, message }) => {
@@ -158,14 +136,12 @@ export class GameServer {
             this.handleJoinLobby(playerId, message.payload)
         })
 
-        // Handle START_GAME
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'START_GAME')
         ).subscribe(({ playerId }) => {
             this.handleStartGame(playerId)
         })
 
-        // Handle PLAY_CARD
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'PLAY_CARD')
         ).subscribe(({ playerId, message }) => {
@@ -173,21 +149,18 @@ export class GameServer {
             this.handlePlayCard(playerId, message.payload)
         })
 
-        // Handle DRAW_CARD
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'DRAW_CARD')
         ).subscribe(({ playerId }) => {
             this.handleDrawCard(playerId)
         })
 
-        // Handle SAY_UNO
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'SAY_UNO')
         ).subscribe(({ playerId }) => {
             this.handleSayUno(playerId)
         })
 
-        // Handle CATCH_UNO
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'CATCH_UNO')
         ).subscribe(({ playerId, message }) => {
@@ -195,14 +168,12 @@ export class GameServer {
             this.handleCatchUno(playerId, message.payload)
         })
 
-        // Handle RETURN_TO_LOBBY
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'RETURN_TO_LOBBY')
         ).subscribe(({ playerId }) => {
             this.handleReturnToLobby(playerId)
         })
 
-        // Handle ADD_BOT
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'ADD_BOT')
         ).subscribe(({ playerId, message }) => {
@@ -210,7 +181,6 @@ export class GameServer {
             this.handleAddBot(playerId, message.payload?.difficulty || 'hard')
         })
 
-        // Handle REMOVE_BOT
         this.messageSubject.pipe(
             filter(({ message }) => message.type === 'REMOVE_BOT')
         ).subscribe(({ playerId, message }) => {
@@ -219,21 +189,17 @@ export class GameServer {
         })
     }
 
-    // ============================================
-    // Lobby Handlers
-    // ============================================
-
     private handleCreateLobby(playerId: string, payload: { playerName: string; maxPlayers: number }): void {
         const lobbyId = uuidv4().substring(0, 8).toUpperCase()
 
         const playerConnection = this.findOrCreatePlayer(playerId, payload.playerName)
-        resetBotNames() // Reset bot names for new lobby
+        resetBotNames()
 
         const lobby: Lobby = {
             id: lobbyId,
             players: [playerConnection],
             hostIndex: 0,
-            maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 5), // Clamp between 2-5
+            maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 5),
             game: null,
             botIndices: []
         }
@@ -253,7 +219,6 @@ export class GameServer {
         if (payload.lobbyId) {
             lobby = this.lobbies.get(payload.lobbyId.toUpperCase())
         } else {
-            // Find any open lobby
             for (const [, l] of this.lobbies) {
                 if (!l.game && l.players.length < l.maxPlayers) {
                     lobby = l
@@ -311,14 +276,12 @@ export class GameServer {
             return
         }
 
-        // Create the game (single round - first to empty hand wins)
         const playerNames = lobby.players.map(p => p.playerName)
         lobby.game = createGame({
             players: playerNames,
-            targetScore: 1 // Single round game
+            targetScore: 1
         })
 
-        // Send game state to all players
         lobby.players.forEach((player, idx) => {
             player.send({
                 type: 'GAME_STARTED',
@@ -326,13 +289,8 @@ export class GameServer {
             })
         })
 
-        // Check if it's a bot's turn first
         this.scheduleBotMoveIfNeeded(lobby)
     }
-
-    // ============================================
-    // Bot Handlers
-    // ============================================
 
     private handleAddBot(playerId: string, difficulty: BotDifficulty): void {
         const lobbyId = this.playerToLobby.get(playerId)
@@ -366,13 +324,12 @@ export class GameServer {
             return
         }
 
-        // Create bot player
         const botId = `bot_${uuidv4().substring(0, 8)}`
         const botName = generateBotName()
         const botConnection: PlayerConnection = {
             id: botId,
             playerName: botName,
-            send: () => { }, // Bots don't receive messages
+            send: () => { },
             isConnected: true,
             isBot: true,
             botDifficulty: difficulty
@@ -423,16 +380,13 @@ export class GameServer {
             return
         }
 
-        // Remove bot
         this.playerToLobby.delete(player.id)
         lobby.players.splice(botIndex, 1)
 
-        // Update botIndices
         lobby.botIndices = lobby.players
             .map((p, idx) => p.isBot ? idx : -1)
             .filter(idx => idx >= 0)
 
-        // Update host index if needed
         if (lobby.hostIndex >= lobby.players.length) {
             lobby.hostIndex = 0
         }
@@ -449,8 +403,7 @@ export class GameServer {
         const currentPlayer = lobby.players[round.playerInTurn]
         if (!currentPlayer?.isBot) return
 
-        // Schedule bot move with delay for realism
-        const delay = 800 + Math.random() * 1200 // 0.8-2 seconds
+        const delay = 800 + Math.random() * 1200
         setTimeout(() => {
             this.executeBotMove(lobby, round.playerInTurn!)
         }, delay)
@@ -460,19 +413,16 @@ export class GameServer {
         if (!lobby.game?.currentRound) return
 
         const round = lobby.game.currentRound
-        if (round.playerInTurn !== botIndex) return // Turn already changed
+        if (round.playerInTurn !== botIndex) return
 
         const bot = lobby.players[botIndex]
         if (!bot?.isBot) return
 
         try {
-            // First, check if bot should catch someone for UNO failure
             const catchTarget = shouldCatchUno(round, botIndex)
             if (catchTarget !== null) {
-                // Small chance bot catches (makes game more interesting)
                 if (Math.random() < 0.7) {
                     this.executeBotCatchUno(lobby, botIndex, catchTarget)
-                    // Small delay before making actual move
                     setTimeout(() => {
                         this.executeBotMove(lobby, botIndex)
                     }, 500)
@@ -480,11 +430,9 @@ export class GameServer {
                 }
             }
 
-            // Make decision
             const decision = makeBotDecision(round, botIndex, bot.botDifficulty || 'hard')
 
             if (decision.action === 'draw') {
-                // Draw card
                 lobby.game = gamePlay((r: Round) => draw(r), lobby.game)
 
                 this.broadcastToLobby(lobby.id, {
@@ -505,9 +453,7 @@ export class GameServer {
                     payload: { playerIndex: botIndex, card, newColor }
                 })
 
-                // Check if bot should call UNO
                 if (lobby.game.currentRound && shouldCallUno(lobby.game.currentRound, botIndex)) {
-                    // Small delay then call UNO
                     setTimeout(() => {
                         this.executeBotSayUno(lobby, botIndex)
                     }, 200 + Math.random() * 500)
@@ -517,7 +463,6 @@ export class GameServer {
             this.broadcastGameState(lobby)
             this.checkRoundEnd(lobby)
 
-            // Schedule next bot move if needed
             if (lobby.game?.currentRound) {
                 this.scheduleBotMoveIfNeeded(lobby)
             }
@@ -539,7 +484,6 @@ export class GameServer {
 
             this.broadcastGameState(lobby)
         } catch (error) {
-            // Ignore - might already be called
         }
     }
 
@@ -564,13 +508,8 @@ export class GameServer {
 
             this.broadcastGameState(lobby)
         } catch (error) {
-            // Ignore
         }
     }
-
-    // ============================================
-    // Game Action Handlers
-    // ============================================
 
     private handlePlayCard(playerId: string, payload: { cardIndex: number; namedColor?: Color }): void {
         const { lobby, playerIndex } = this.getPlayerContext(playerId)
@@ -594,7 +533,6 @@ export class GameServer {
                 lobby.game
             )
 
-            // Broadcast card played
             this.broadcastToLobby(lobby.id, {
                 type: 'CARD_PLAYED',
                 payload: { playerIndex, card, newColor }
@@ -603,7 +541,6 @@ export class GameServer {
             this.broadcastGameState(lobby)
             this.checkRoundEnd(lobby)
 
-            // Schedule bot move if it's now a bot's turn
             this.scheduleBotMoveIfNeeded(lobby)
         } catch (error: any) {
             lobby.players[playerIndex].send({
@@ -636,7 +573,6 @@ export class GameServer {
 
             this.broadcastGameState(lobby)
 
-            // Schedule bot move if it's now a bot's turn
             this.scheduleBotMoveIfNeeded(lobby)
         } catch (error: any) {
             lobby.players[playerIndex].send({
@@ -678,7 +614,6 @@ export class GameServer {
                 lobby.game
             )
 
-            // Check if catch was successful (hand size changed)
             if (lobby.game.currentRound &&
                 lobby.game.currentRound.hands[payload.accusedPlayerIndex].length >
                 oldRound.hands[payload.accusedPlayerIndex].length) {
@@ -697,12 +632,7 @@ export class GameServer {
         }
     }
 
-    // ============================================
-    // Helper Methods
-    // ============================================
-
     private findOrCreatePlayer(playerId: string, playerName: string): PlayerConnection {
-        // Check if player exists in any lobby
         for (const [, lobby] of this.lobbies) {
             const existing = lobby.players.find(p => p.id === playerId)
             if (existing) {
@@ -711,14 +641,12 @@ export class GameServer {
             }
         }
 
-        // Check if we have a stored connection from addPlayer
         const storedConnection = this.playerConnections.get(playerId)
         if (storedConnection) {
             storedConnection.playerName = playerName
             return storedConnection
         }
 
-        // Create new placeholder - will be replaced when proper connection established
         console.warn(`Creating placeholder connection for ${playerId} - this should not happen`)
         return {
             id: playerId,
@@ -765,7 +693,6 @@ export class GameServer {
         const hand = round ? round.hands[playerIndex] : []
         const isMyTurn = round?.playerInTurn === playerIndex
 
-        // Pre-compute which cards can be played
         const canPlayCards = hand.map((_, idx) => {
             if (!round || !isMyTurn) return false
             return canPlay(idx, round)
@@ -826,7 +753,6 @@ export class GameServer {
     private checkRoundEnd(lobby: Lobby): void {
         if (!lobby.game) return
 
-        // Check if game ended (someone won the round)
         if (lobby.game.currentRound?.playerInTurn === undefined) {
             const winnerIndex = lobby.game.currentRound?.hands.findIndex(h => h.length === 0) ?? -1
             if (winnerIndex >= 0) {
@@ -845,10 +771,8 @@ export class GameServer {
         const { lobby } = this.getPlayerContext(playerId)
         if (!lobby) return
 
-        // Reset the game
         lobby.game = null
 
-        // Broadcast lobby state to all players
         this.broadcastLobbyState(lobby.id)
     }
 }

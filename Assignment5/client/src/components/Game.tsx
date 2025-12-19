@@ -13,12 +13,10 @@ export function Game() {
     const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
     const [showColorPicker, setShowColorPicker] = useState(false)
 
-    // Check for game end using both lastEvent and game.winner
     const gameEndedByEvent = lastEvent?.type === 'GAME_ENDED'
     const gameEndedByWinner = game?.winner !== undefined
     const gameEnded = gameEndedByEvent || gameEndedByWinner
 
-    // Get winner info from lastEvent or construct from game state
     const winnerInfo = gameEndedByEvent
         ? lastEvent.payload
         : gameEndedByWinner

@@ -13,30 +13,25 @@ const wss = new WebSocketServer({ server })
 
 const gameServer = new GameServer()
 
-// Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' })
 })
 
-// WebSocket connection handling
 wss.on('connection', (ws: WebSocket) => {
     const playerId = uuidv4()
     console.log(`Player connected: ${playerId}`)
 
-    // Send function for this connection
     const send = (message: ServerMessage) => {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(message))
         }
     }
 
-    // Handle incoming messages
     ws.on('message', (data: Buffer) => {
         try {
             const message: ClientMessage = JSON.parse(data.toString())
             console.log(`Received from ${playerId}:`, message.type)
 
-            // For CREATE_LOBBY and JOIN_LOBBY, we need to set up the player connection
             if (message.type === 'CREATE_LOBBY' || message.type === 'JOIN_LOBBY') {
                 const playerName = message.payload.playerName
                 gameServer.addPlayer(playerId, playerName, send)
@@ -49,13 +44,11 @@ wss.on('connection', (ws: WebSocket) => {
         }
     })
 
-    // Handle disconnection
     ws.on('close', () => {
         console.log(`Player disconnected: ${playerId}`)
         gameServer.removePlayer(playerId)
     })
 
-    // Handle errors
     ws.on('error', (error) => {
         console.error(`WebSocket error for ${playerId}:`, error)
     })

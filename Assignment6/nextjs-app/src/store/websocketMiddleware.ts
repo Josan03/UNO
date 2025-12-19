@@ -7,7 +7,6 @@ import { retryWhen, delayWhen, tap } from 'rxjs/operators'
 import { ClientMessage, ServerMessage } from '@shared/protocol'
 import { setConnectionStatus, handleServerMessage } from './gameSlice'
 
-// Action types for WebSocket operations
 export const WS_CONNECT = 'WS_CONNECT'
 export const WS_DISCONNECT = 'WS_DISCONNECT'
 export const WS_SEND = 'WS_SEND'
@@ -28,7 +27,6 @@ export interface WSSendAction {
 
 export type WSAction = WSConnectAction | WSDisconnectAction | WSSendAction
 
-// Action creators
 export const wsConnect = (url: string): WSConnectAction => ({
     type: WS_CONNECT,
     payload: { url }
@@ -43,7 +41,6 @@ export const wsSend = (message: ClientMessage): WSSendAction => ({
     payload: message
 })
 
-// WebSocket middleware
 export const createWebSocketMiddleware = (): Middleware => {
     let socket$: WebSocketSubject<ServerMessage> | null = null
     let reconnectAttempts = 0
@@ -74,7 +71,6 @@ export const createWebSocketMiddleware = (): Middleware => {
                             store.dispatch(setConnectionStatus('connected'))
                             reconnectAttempts = 0
 
-                            // Send queued messages
                             while (messageQueue.length > 0 && socket$) {
                                 const msg = messageQueue.shift()!
                                 console.log('Sending queued:', msg.type)
@@ -133,7 +129,6 @@ export const createWebSocketMiddleware = (): Middleware => {
                     console.log('Sending:', message.type)
                     socket$.next(message as unknown as ServerMessage)
                 } else if (socket$) {
-                    // Queue message to send when connected
                     console.log('Queuing:', message.type)
                     messageQueue.push(message)
                 } else {

@@ -72,7 +72,7 @@ export const gameSlice = createSlice({
                 case 'GAME_STARTED':
                     state.game = message.payload
                     state.lobby = null
-                    state.gameHistory = [] // Clear history on new game
+                    state.gameHistory = []
                     break
                 case 'GAME_STATE':
                     state.game = message.payload
