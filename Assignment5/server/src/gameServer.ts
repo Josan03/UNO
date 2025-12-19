@@ -11,6 +11,7 @@ import {
     GameStateForPlayer,
     PublicPlayerState
 } from '../../shared/protocol'
+import { makeBotDecision, shouldCallUno, shouldCatchUno, generateBotName, resetBotNames, BotDifficulty } from './botAI'
 
 // ============================================
 // Types
@@ -21,6 +22,8 @@ export interface PlayerConnection {
     playerName: string
     send: (message: ServerMessage) => void
     isConnected: boolean
+    isBot: boolean
+    botDifficulty?: BotDifficulty
 }
 
 export interface Lobby {
@@ -29,6 +32,7 @@ export interface Lobby {
     hostIndex: number
     maxPlayers: number
     game: Game | null
+    botIndices: number[] // Track which player indices are bots
 }
 
 // ============================================
@@ -62,7 +66,8 @@ export class GameServer {
             id: playerId,
             playerName,
             send,
-            isConnected: true
+            isConnected: true,
+            isBot: false
         }
         // Store the connection so findOrCreatePlayer can find it
         this.playerConnections.set(playerId, connection)
@@ -196,6 +201,22 @@ export class GameServer {
         ).subscribe(({ playerId }) => {
             this.handleReturnToLobby(playerId)
         })
+
+        // Handle ADD_BOT
+        this.messageSubject.pipe(
+            filter(({ message }) => message.type === 'ADD_BOT')
+        ).subscribe(({ playerId, message }) => {
+            if (message.type !== 'ADD_BOT') return
+            this.handleAddBot(playerId, message.payload?.difficulty || 'hard')
+        })
+
+        // Handle REMOVE_BOT
+        this.messageSubject.pipe(
+            filter(({ message }) => message.type === 'REMOVE_BOT')
+        ).subscribe(({ playerId, message }) => {
+            if (message.type !== 'REMOVE_BOT') return
+            this.handleRemoveBot(playerId, message.payload.botIndex)
+        })
     }
 
     // ============================================
@@ -206,13 +227,15 @@ export class GameServer {
         const lobbyId = uuidv4().substring(0, 8).toUpperCase()
 
         const playerConnection = this.findOrCreatePlayer(playerId, payload.playerName)
+        resetBotNames() // Reset bot names for new lobby
 
         const lobby: Lobby = {
             id: lobbyId,
             players: [playerConnection],
             hostIndex: 0,
             maxPlayers: Math.min(Math.max(payload.maxPlayers || 4, 2), 10), // Clamp between 2-10
-            game: null
+            game: null,
+            botIndices: []
         }
 
         this.lobbies.set(lobbyId, lobby)
@@ -302,6 +325,247 @@ export class GameServer {
                 payload: this.getGameStateForPlayer(lobby, idx)
             })
         })
+
+        // Check if it's a bot's turn first
+        this.scheduleBotMoveIfNeeded(lobby)
+    }
+
+    // ============================================
+    // Bot Handlers
+    // ============================================
+
+    private handleAddBot(playerId: string, difficulty: BotDifficulty): void {
+        const lobbyId = this.playerToLobby.get(playerId)
+        if (!lobbyId) return
+
+        const lobby = this.lobbies.get(lobbyId)
+        if (!lobby) return
+
+        const playerIndex = lobby.players.findIndex(p => p.id === playerId)
+        if (playerIndex !== lobby.hostIndex) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Only the host can add bots' }
+            })
+            return
+        }
+
+        if (lobby.game) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Cannot add bots during a game' }
+            })
+            return
+        }
+
+        if (lobby.players.length >= lobby.maxPlayers) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Lobby is full' }
+            })
+            return
+        }
+
+        // Create bot player
+        const botId = `bot_${uuidv4().substring(0, 8)}`
+        const botName = generateBotName()
+        const botConnection: PlayerConnection = {
+            id: botId,
+            playerName: botName,
+            send: () => { }, // Bots don't receive messages
+            isConnected: true,
+            isBot: true,
+            botDifficulty: difficulty
+        }
+
+        const botIndex = lobby.players.length
+        lobby.players.push(botConnection)
+        lobby.botIndices.push(botIndex)
+        this.playerToLobby.set(botId, lobby.id)
+
+        this.broadcastLobbyState(lobby.id)
+    }
+
+    private handleRemoveBot(playerId: string, botIndex: number): void {
+        const lobbyId = this.playerToLobby.get(playerId)
+        if (!lobbyId) return
+
+        const lobby = this.lobbies.get(lobbyId)
+        if (!lobby) return
+
+        const playerIndex = lobby.players.findIndex(p => p.id === playerId)
+        if (playerIndex !== lobby.hostIndex) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Only the host can remove bots' }
+            })
+            return
+        }
+
+        if (lobby.game) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Cannot remove bots during a game' }
+            })
+            return
+        }
+
+        if (botIndex < 0 || botIndex >= lobby.players.length) {
+            return
+        }
+
+        const player = lobby.players[botIndex]
+        if (!player.isBot) {
+            lobby.players[playerIndex].send({
+                type: 'ERROR',
+                payload: { message: 'Cannot remove human players' }
+            })
+            return
+        }
+
+        // Remove bot
+        this.playerToLobby.delete(player.id)
+        lobby.players.splice(botIndex, 1)
+
+        // Update botIndices
+        lobby.botIndices = lobby.players
+            .map((p, idx) => p.isBot ? idx : -1)
+            .filter(idx => idx >= 0)
+
+        // Update host index if needed
+        if (lobby.hostIndex >= lobby.players.length) {
+            lobby.hostIndex = 0
+        }
+
+        this.broadcastLobbyState(lobby.id)
+    }
+
+    private scheduleBotMoveIfNeeded(lobby: Lobby): void {
+        if (!lobby.game?.currentRound) return
+
+        const round = lobby.game.currentRound
+        if (round.playerInTurn === undefined) return
+
+        const currentPlayer = lobby.players[round.playerInTurn]
+        if (!currentPlayer?.isBot) return
+
+        // Schedule bot move with delay for realism
+        const delay = 800 + Math.random() * 1200 // 0.8-2 seconds
+        setTimeout(() => {
+            this.executeBotMove(lobby, round.playerInTurn!)
+        }, delay)
+    }
+
+    private executeBotMove(lobby: Lobby, botIndex: number): void {
+        if (!lobby.game?.currentRound) return
+
+        const round = lobby.game.currentRound
+        if (round.playerInTurn !== botIndex) return // Turn already changed
+
+        const bot = lobby.players[botIndex]
+        if (!bot?.isBot) return
+
+        try {
+            // First, check if bot should catch someone for UNO failure
+            const catchTarget = shouldCatchUno(round, botIndex)
+            if (catchTarget !== null) {
+                // Small chance bot catches (makes game more interesting)
+                if (Math.random() < 0.7) {
+                    this.executeBotCatchUno(lobby, botIndex, catchTarget)
+                    // Small delay before making actual move
+                    setTimeout(() => {
+                        this.executeBotMove(lobby, botIndex)
+                    }, 500)
+                    return
+                }
+            }
+
+            // Make decision
+            const decision = makeBotDecision(round, botIndex, bot.botDifficulty || 'hard')
+
+            if (decision.action === 'draw') {
+                // Draw card
+                lobby.game = gamePlay((r: Round) => draw(r), lobby.game)
+
+                this.broadcastToLobby(lobby.id, {
+                    type: 'CARD_DRAWN',
+                    payload: { playerIndex: botIndex }
+                })
+            } else if (decision.action === 'play' && decision.cardIndex !== undefined) {
+                const card = round.hands[botIndex][decision.cardIndex]
+                const newColor = decision.namedColor || card.color!
+
+                lobby.game = gamePlay(
+                    (r: Round) => roundPlay(decision.cardIndex!, decision.namedColor, r),
+                    lobby.game
+                )
+
+                this.broadcastToLobby(lobby.id, {
+                    type: 'CARD_PLAYED',
+                    payload: { playerIndex: botIndex, card, newColor }
+                })
+
+                // Check if bot should call UNO
+                if (lobby.game.currentRound && shouldCallUno(lobby.game.currentRound, botIndex)) {
+                    // Small delay then call UNO
+                    setTimeout(() => {
+                        this.executeBotSayUno(lobby, botIndex)
+                    }, 200 + Math.random() * 500)
+                }
+            }
+
+            this.broadcastGameState(lobby)
+            this.checkRoundEnd(lobby)
+
+            // Schedule next bot move if needed
+            if (lobby.game?.currentRound) {
+                this.scheduleBotMoveIfNeeded(lobby)
+            }
+        } catch (error: any) {
+            console.error(`Bot ${bot.playerName} error:`, error.message)
+        }
+    }
+
+    private executeBotSayUno(lobby: Lobby, botIndex: number): void {
+        if (!lobby.game?.currentRound) return
+
+        try {
+            lobby.game = gamePlay((r: Round) => sayUno(botIndex, r), lobby.game)
+
+            this.broadcastToLobby(lobby.id, {
+                type: 'UNO_CALLED',
+                payload: { playerIndex: botIndex }
+            })
+
+            this.broadcastGameState(lobby)
+        } catch (error) {
+            // Ignore - might already be called
+        }
+    }
+
+    private executeBotCatchUno(lobby: Lobby, botIndex: number, accusedIndex: number): void {
+        if (!lobby.game?.currentRound) return
+
+        try {
+            const oldRound = lobby.game.currentRound
+            lobby.game = gamePlay(
+                (r: Round) => catchUnoFailure({ accuser: botIndex, accused: accusedIndex }, r),
+                lobby.game
+            )
+
+            if (lobby.game.currentRound &&
+                lobby.game.currentRound.hands[accusedIndex].length >
+                oldRound.hands[accusedIndex].length) {
+                this.broadcastToLobby(lobby.id, {
+                    type: 'UNO_CAUGHT',
+                    payload: { accuser: botIndex, accused: accusedIndex }
+                })
+            }
+
+            this.broadcastGameState(lobby)
+        } catch (error) {
+            // Ignore
+        }
     }
 
     // ============================================
@@ -338,6 +602,9 @@ export class GameServer {
 
             this.broadcastGameState(lobby)
             this.checkRoundEnd(lobby)
+
+            // Schedule bot move if it's now a bot's turn
+            this.scheduleBotMoveIfNeeded(lobby)
         } catch (error: any) {
             lobby.players[playerIndex].send({
                 type: 'ERROR',
@@ -368,6 +635,9 @@ export class GameServer {
             })
 
             this.broadcastGameState(lobby)
+
+            // Schedule bot move if it's now a bot's turn
+            this.scheduleBotMoveIfNeeded(lobby)
         } catch (error: any) {
             lobby.players[playerIndex].send({
                 type: 'ERROR',
@@ -454,7 +724,8 @@ export class GameServer {
             id: playerId,
             playerName,
             send: () => { },
-            isConnected: true
+            isConnected: true,
+            isBot: false
         }
     }
 
@@ -475,7 +746,8 @@ export class GameServer {
             players: lobby.players.map(p => p.playerName),
             hostIndex: lobby.hostIndex,
             maxPlayers: lobby.maxPlayers,
-            isStarted: lobby.game !== null
+            isStarted: lobby.game !== null,
+            botPlayers: lobby.botIndices
         }
     }
 
@@ -486,7 +758,8 @@ export class GameServer {
         const players: PublicPlayerState[] = lobby.players.map((p, idx) => ({
             name: p.playerName,
             cardCount: round ? round.hands[idx].length : 0,
-            isConnected: p.isConnected
+            isConnected: p.isConnected,
+            isBot: p.isBot || false
         }))
 
         const hand = round ? round.hands[playerIndex] : []

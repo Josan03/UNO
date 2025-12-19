@@ -91,8 +91,8 @@ export function Game() {
                             {isWinner ? '🏆' : '🎮'}
                         </div>
                         <h2 className={`text-4xl font-black mb-3 ${isWinner
-                                ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600'
-                                : 'text-white'
+                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600'
+                            : 'text-white'
                             }`}>
                             {isWinner ? 'VICTORY!' : 'GAME OVER'}
                         </h2>
@@ -142,9 +142,11 @@ export function Game() {
                             </>
                         ) : (
                             <>
-                                <span className="w-3 h-3 rounded-full bg-white/40" />
+                                <span className={`w-3 h-3 rounded-full ${game.players[game.round.playerInTurn ?? 0]?.isBot ? 'bg-purple-400 animate-pulse' : 'bg-white/40'}`} />
                                 <span className="text-white/60">
+                                    {game.players[game.round.playerInTurn ?? 0]?.isBot ? '🤖 ' : ''}
                                     {game.players[game.round.playerInTurn ?? 0]?.name}'s turn
+                                    {game.players[game.round.playerInTurn ?? 0]?.isBot ? ' (thinking...)' : ''}
                                 </span>
                             </>
                         )}
@@ -163,19 +165,24 @@ export function Game() {
                         <div
                             key={index}
                             className={`glass rounded-2xl p-4 min-w-[140px] transition-all duration-300 ${isCurrentTurn ? 'ring-2 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)]' : ''
-                                }`}
+                                } ${player.isBot ? 'border border-purple-500/30' : ''}`}
                         >
                             <div className="flex items-center gap-2 mb-2">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
                                     ${isCurrentTurn
                                         ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white'
-                                        : 'bg-white/10 text-white/70'}`}>
-                                    {player.name.charAt(0).toUpperCase()}
+                                        : player.isBot
+                                            ? 'bg-gradient-to-br from-purple-500 to-violet-600 text-white'
+                                            : 'bg-white/10 text-white/70'}`}>
+                                    {player.isBot ? '🤖' : player.name.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="text-white font-medium text-sm truncate flex-1">
                                     {player.name}
                                 </span>
-                                {!player.isConnected && (
+                                {player.isBot && (
+                                    <span className="text-purple-400 text-xs" title="Bot">BOT</span>
+                                )}
+                                {!player.isConnected && !player.isBot && (
                                     <span className="text-red-400 text-xs" title="Disconnected">⚠️</span>
                                 )}
                             </div>
@@ -184,7 +191,7 @@ export function Game() {
                                     <span className="text-xl">🃏</span>
                                     <span className="text-white font-bold">{player.cardCount}</span>
                                 </div>
-                                {hasUno && !gameEnded && (
+                                {hasUno && !gameEnded && !player.isBot && (
                                     <button
                                         onClick={() => handleCatchUno(index)}
                                         className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs 
@@ -213,8 +220,8 @@ export function Game() {
                                 onClick={handleDraw}
                                 disabled={!game.canDrawCard || gameEnded}
                                 className={`relative transition-all duration-200 ${game.canDrawCard && !gameEnded
-                                        ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer'
-                                        : 'opacity-50 cursor-not-allowed'
+                                    ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer'
+                                    : 'opacity-50 cursor-not-allowed'
                                     }`}
                             >
                                 {/* Stacked cards effect */}
@@ -240,8 +247,8 @@ export function Game() {
                             </div>
                             <div className="mt-3 flex items-center justify-center gap-2">
                                 <div className={`w-4 h-4 rounded-full ${currentColor === 'RED' ? 'bg-uno-red' :
-                                        currentColor === 'BLUE' ? 'bg-uno-blue' :
-                                            currentColor === 'GREEN' ? 'bg-uno-green' : 'bg-uno-yellow'
+                                    currentColor === 'BLUE' ? 'bg-uno-blue' :
+                                        currentColor === 'GREEN' ? 'bg-uno-green' : 'bg-uno-yellow'
                                     }`} />
                                 <span className="text-white/70 font-medium">{currentColor}</span>
                             </div>
@@ -289,8 +296,8 @@ export function Game() {
                                 onClick={handleSayUno}
                                 disabled={alreadyCalledUno}
                                 className={`px-6 py-2.5 rounded-xl font-black text-lg tracking-wide transition-all duration-300 ${alreadyCalledUno
-                                        ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-uno-red to-red-600 text-white hover:shadow-glow-red animate-bounce'
+                                    ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-uno-red to-red-600 text-white hover:shadow-glow-red animate-bounce'
                                     }`}
                             >
                                 {alreadyCalledUno ? 'UNO! ✓' : 'UNO!'}

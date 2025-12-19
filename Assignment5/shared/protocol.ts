@@ -11,6 +11,8 @@ export type { Card, Color }
 export type ClientMessage =
     | { type: 'JOIN_LOBBY'; payload: { playerName: string; lobbyId?: string } }
     | { type: 'CREATE_LOBBY'; payload: { playerName: string; maxPlayers: number } }
+    | { type: 'ADD_BOT'; payload: { difficulty?: 'easy' | 'medium' | 'hard' } }
+    | { type: 'REMOVE_BOT'; payload: { botIndex: number } }
     | { type: 'START_GAME'; payload: {} }
     | { type: 'PLAY_CARD'; payload: { cardIndex: number; namedColor?: Color } }
     | { type: 'DRAW_CARD'; payload: {} }
@@ -46,12 +48,14 @@ export interface LobbyState {
     hostIndex: number
     maxPlayers: number
     isStarted: boolean
+    botPlayers: number[] // indices of bot players
 }
 
 export interface PublicPlayerState {
     name: string
     cardCount: number
     isConnected: boolean
+    isBot: boolean
 }
 
 export interface GameStateForPlayer {

@@ -68,21 +68,24 @@ export function GameHistory() {
                         const cardColor = entry.card?.type === 'WILD' || entry.card?.type === 'WILD DRAW'
                             ? entry.newColor
                             : (entry.card as any)?.color
+                        const isBot = game.players[entry.playerIndex]?.isBot
 
                         return (
                             <div
                                 key={entry.id}
                                 className={`flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 ${isMyAction
-                                        ? 'bg-uno-blue/20 border border-uno-blue/30'
+                                    ? 'bg-uno-blue/20 border border-uno-blue/30'
+                                    : isBot
+                                        ? 'bg-purple-500/10 border border-purple-500/20'
                                         : 'bg-white/5'
                                     } ${isLatest ? 'opacity-100 scale-100' : 'opacity-60 scale-[0.98]'}`}
                             >
                                 <span className="text-lg">{getEntryIcon(entry.type)}</span>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <span className={`font-semibold text-sm truncate ${isMyAction ? 'text-uno-blue' : 'text-white/80'
+                                        <span className={`font-semibold text-sm truncate ${isMyAction ? 'text-uno-blue' : isBot ? 'text-purple-400' : 'text-white/80'
                                             }`}>
-                                            {isMyAction ? 'You' : entry.playerName}
+                                            {isMyAction ? 'You' : isBot ? `🤖 ${entry.playerName}` : entry.playerName}
                                         </span>
                                         {entry.type === 'CARD_PLAYED' && cardColor && (
                                             <span className={`w-2.5 h-2.5 rounded-full ${getColorDot(cardColor)}`} />
